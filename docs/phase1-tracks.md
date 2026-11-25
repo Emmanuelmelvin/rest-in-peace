@@ -4,7 +4,7 @@ Phase 1 (the compiler core, tasks 1.1–1.9 in `.kiro/specs/rip-basic/tasks.md`)
 
 | Track | Built with | Branch | Tasks | Owns |
 |---|---|---|---|---|
-| **A: front end** | Kiro | `phase1/frontend` | 1.1 lexer, 1.2 expressions, 1.3 statements, 1.4 functions, 1.7a classic-mode parsing, 1.8 error hints | `internal/compiler/lexer/`, `internal/compiler/parser/`, `internal/compiler/check/` |
+| **A: front end** | Claude Code | its own session branch | 1.1 lexer, 1.2 expressions, 1.3 statements, 1.4 functions, 1.7a classic-mode parsing, 1.8 error hints | `internal/compiler/lexer/`, `internal/compiler/parser/`, `internal/compiler/check/` |
 | **B: back end** | Claude Code | its own session branch | 1.5 Go codegen, 1.7b classic `goto` codegen, plus the `rt` operators that are still stubs | `internal/compiler/codegen/`, `rt/` |
 | **C: test harness** | Claude Code | its own session branch | 1.9 golden runner, finishing 1.6, and 25+ new golden programs | `internal/golden/`, `internal/build/`, `testdata/golden/` |
 
@@ -14,7 +14,7 @@ Phase 1 (the compiler core, tasks 1.1–1.9 in `.kiro/specs/rip-basic/tasks.md`)
 3. **Follow `.kiro/steering/`**, especially `language.md`. Never invent syntax.
 4. **Commit to your own branch.** Don't merge into `main` and don't push; merging happens centrally.
 5. **Before every commit:** `gofmt -l .` prints nothing, and `go vet ./...` and `go test ./...` pass.
-6. **Don't tick boxes in `tasks.md`** on tracks B and C; they're ticked at merge time. Track A ticks its own boxes in Kiro.
+6. **Don't tick boxes in `tasks.md`**; they're ticked at merge time.
 
 ## Merge order
-C → B → A into `main`, then the full golden suite runs. That's the first time the compiler works end to end: `.bas` → tokens → AST → Go → binary → output compared with the `.out` files.
+C (merged) → B → A into `main`, then the full golden suite runs. That's the first time the compiler works end to end: `.bas` → tokens → AST → Go → binary → output compared with the `.out` files.
