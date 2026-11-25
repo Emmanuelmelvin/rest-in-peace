@@ -1,6 +1,9 @@
 # Implementation Plan — REST in Peace (RIP BASIC)
 
 `P0` = must ship for the demo · `P1` = ship if time allows. Each task lists the requirements it covers.
+
+**[Kiro]** = built in Kiro (see `docs/kiro.md`). Every other task is built with Claude Code. Claude Code sessions never edit the files a Kiro task owns (see `.kiro/steering/structure.md`).
+
 Schedule: Wed 25 Nov → submit on Fri 4 Dec 2026, before 11:00 PM WAT (2:00 PM PT).
 
 Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` finds the starting point for a task.
@@ -47,9 +50,9 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
   - _Requirements: 6.1–6.7_
 - [ ] 2.3 `P0` USE middleware with path scoping; APIKEY, CORS, REQUESTLOG
   - _Requirements: 8.1–8.3_
-- [ ] 2.4 `P0` ENV/ENVREQUIRE, `.env` in dev, LOG via slog with redaction, PRINT
+- [ ] 2.4 `P0` ENV/ENVREQUIRE, `.env` in dev, LOG via slog with redaction, PRINT · **[Kiro]**
   - _Requirements: 10.1–10.5_
-- [ ] 2.5 `P0` DECIMAL (shopspring/decimal): arithmetic, comparisons, ROUND, JSON
+- [ ] 2.5 `P0` DECIMAL (shopspring/decimal): arithmetic, comparisons, ROUND, JSON · **[Kiro]**
   - _Requirements: 3.7_
 - [ ] 2.6 `P0` Classic per-request GOSUB stack and per-program mutex
   - _Requirements: 7.10_
@@ -73,7 +76,7 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
   - _Requirements: 5.1–5.3_
 - [ ] 3.5 `P0` IMPORT FROM GO: go/packages loading, typed call conversion, error results, `context.Context` injection, Host values, `NEW()`
   - _Requirements: 5.4–5.7; design §4.10_
-- [ ] 3.6 `P1` SQL injection compile warning
+- [ ] 3.6 `P1` SQL injection compile warning · **[Kiro]**
   - _Requirements: 9.4_
 - [ ] 3.7 `P1` FETCH with timeout
   - _Requirements: 11.1_
@@ -97,7 +100,7 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
   - _Requirements: 15.1, 15.3_
 - [ ] 5.3 `P0` Process isolation, memory and time caps, watchdog, loop guards, interop allowlist, FETCH SSRF guard
   - _Requirements: 15.4, 15.5, 11.2_
-- [ ] 5.4 `P0` CRT theme and samples
+- [ ] 5.4 `P0` CRT theme and samples · **[Kiro]**
   - _Requirements: 15.6, 15.7_
 - [ ] 5.5 `P1` Secrets panel
   - _Requirements: 15.2_
