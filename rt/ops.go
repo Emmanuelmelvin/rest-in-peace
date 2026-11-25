@@ -3,6 +3,7 @@ package rt
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -30,23 +31,150 @@ func Mul(a, b Value) Value { return arith('*', a, b) }
 // Div implements /, which always produces a NUMBER (use \ for integer division).
 func Div(a, b Value) Value { return arith('/', a, b) }
 
-// IntDiv implements \.
+// IntDiv implements \. The result is an INTEGER: the quotient truncated toward zero.
 func IntDiv(a, b Value) Value {
-	// TODO(task 1.5): integer division with DIVISION BY ZERO.
-	panic(notBuilt(`\`, "1.5"))
+	ai, af, aInt, aok := num(a)
+	bi, bf, bInt, bok := num(b)
+	if !aok || !bok {
+		panic(Errorf(KindTypeMismatch, `cannot use \ on %s and %s`, TypeName(a), TypeName(b)))
+	}
+	if aInt && bInt {
+		return IntDivInt(ai, bi)
+	}
+	if bf == 0 {
+		panic(divByZero(`\`))
+	}
+	q := math.Trunc(af / bf)
+	if q < math.MinInt64 || q >= math.MaxInt64 || math.IsNaN(q) {
+		panic(Errorf(KindTypeMismatch, `the result of \ is too big for an INTEGER`))
+	}
+	return int64(q)
 }
 
-// Mod implements MOD.
+// IntDivInt is \ on two native INTEGERs.
+func IntDivInt(a, b int64) int64 {
+	if b == 0 {
+		panic(divByZero(`\`))
+	}
+	return a / b
+}
+
+// Mod implements MOD. The result has the sign of the left side, as in Go.
 func Mod(a, b Value) Value {
-	// TODO(task 1.5)
-	panic(notBuilt("MOD", "1.5"))
+	ai, af, aInt, aok := num(a)
+	bi, bf, bInt, bok := num(b)
+	if !aok || !bok {
+		panic(Errorf(KindTypeMismatch, "cannot use MOD on %s and %s", TypeName(a), TypeName(b)))
+	}
+	if aInt && bInt {
+		return ModInt(ai, bi)
+	}
+	return ModNum(af, bf)
 }
 
-// Pow implements ^.
-func Pow(a, b Value) Value {
-	// TODO(task 1.5)
-	panic(notBuilt("^", "1.5"))
+// ModInt is MOD on two native INTEGERs.
+func ModInt(a, b int64) int64 {
+	if b == 0 {
+		panic(divByZero("MOD"))
+	}
+	return a % b
 }
+
+// ModNum is MOD on two native NUMBERs.
+func ModNum(a, b float64) float64 {
+	if b == 0 {
+		panic(divByZero("MOD"))
+	}
+	return math.Mod(a, b)
+}
+
+// DivNum is / on two native NUMBERs.
+func DivNum(a, b float64) float64 {
+	if b == 0 {
+		panic(divByZero("/"))
+	}
+	return a / b
+}
+
+// Pow implements ^. INTEGER ^ non-negative INTEGER stays an INTEGER while it
+// fits; everything else is a NUMBER.
+func Pow(a, b Value) Value {
+	ai, af, aInt, aok := num(a)
+	bi, bf, bInt, bok := num(b)
+	if !aok || !bok {
+		panic(Errorf(KindTypeMismatch, "cannot use ^ on %s and %s", TypeName(a), TypeName(b)))
+	}
+	if aInt && bInt && bi >= 0 {
+		if r, ok := powInt(ai, bi); ok {
+			return r
+		}
+	}
+	return PowNum(af, bf)
+}
+
+// PowNum is ^ on two native NUMBERs.
+func PowNum(a, b float64) float64 {
+	if a == 0 && b < 0 {
+		panic(divByZero("^"))
+	}
+	return math.Pow(a, b)
+}
+
+// powInt computes a^b by squaring and reports false if it overflows int64.
+func powInt(a, b int64) (int64, bool) {
+	r := int64(1)
+	for b > 0 {
+		if b&1 == 1 {
+			if !mulFits(r, a) {
+				return 0, false
+			}
+			r *= a
+		}
+		b >>= 1
+		if b > 0 {
+			if !mulFits(a, a) {
+				return 0, false
+			}
+			a *= a
+		}
+	}
+	return r, true
+}
+
+func mulFits(a, b int64) bool {
+	if a == 0 || b == 0 {
+		return true
+	}
+	c := a * b
+	return c/b == a && !(a == -1 && b == math.MinInt64) && !(b == -1 && a == math.MinInt64)
+}
+
+func divByZero(op string) *Error {
+	return Errorf(KindDivisionByZero, "the right side of %s is zero", op)
+}
+
+// Neg implements unary minus.
+func Neg(a Value) Value {
+	switch x := a.(type) {
+	case int64:
+		return -x
+	case float64:
+		return -x
+	}
+	panic(Errorf(KindTypeMismatch, "cannot use - on a %s", TypeName(a)))
+}
+
+// Ne implements <>.
+func Ne(a, b Value) bool { return !Eq(a, b) }
+
+// Gt implements >. It evaluates its operands left to right, like the source.
+func Gt(a, b Value) bool { return Lt(b, a) }
+
+// Le implements <=.
+func Le(a, b Value) bool { return !Lt(b, a) }
+
+// Ge implements >=.
+func Ge(a, b Value) bool { return !Lt(a, b) }
 
 // Concat implements &, which always concatenates.
 func Concat(a, b Value) string { return ToString(a) + ToString(b) }

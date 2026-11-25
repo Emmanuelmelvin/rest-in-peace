@@ -188,6 +188,9 @@ func Index(v Value, i Value) Value {
 
 // SetMember implements v.name = val.
 func SetMember(v Value, key string, val Value) {
+	if v == nil {
+		panic(Errorf(KindNilAccess, "cannot set %q on NIL — create the map first, e.g. x = {}", key))
+	}
 	m, ok := v.(*Map)
 	if !ok || m == nil {
 		panic(Errorf(KindTypeMismatch, "cannot set %q on a %s", key, TypeName(v)))
@@ -198,6 +201,8 @@ func SetMember(v Value, key string, val Value) {
 // SetIndex implements v[i] = val.
 func SetIndex(v Value, i Value, val Value) {
 	switch x := v.(type) {
+	case nil:
+		panic(Errorf(KindNilAccess, "cannot index NIL"))
 	case *Map:
 		k, ok := i.(string)
 		if !ok || x == nil {
@@ -215,8 +220,10 @@ func SetIndex(v Value, i Value, val Value) {
 	}
 }
 
-// Truthy decides IF/WHILE conditions for dynamic values.
-// TODO(task 1.5): confirm in the spec whether non-BOOLEAN conditions should be a TYPE MISMATCH instead.
+// Truthy decides IF, WHILE, UNTIL, NOT, AND and OR for dynamic values.
+// Non-BOOLEAN conditions are allowed, as in classic BASIC (IF X THEN …):
+// NIL, FALSE, 0 and "" are false, and everything else is true. That also
+// makes the common IF B.title THEN … work without a comparison.
 func Truthy(v Value) bool {
 	switch x := v.(type) {
 	case nil:
