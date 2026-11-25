@@ -1,0 +1,7 @@
+PRINT "ONE"
+x = 2
+IF x = 2 THEN
+  PRINT "TWO"
+  END
+END IF
+PRINT "NEVER"

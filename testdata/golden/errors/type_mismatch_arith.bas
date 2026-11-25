@@ -1,0 +1,4 @@
+PRINT "BEFORE"
+x = "hello"
+PRINT x - 1
+PRINT "AFTER"

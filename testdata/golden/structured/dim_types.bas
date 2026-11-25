@@ -1,0 +1,14 @@
+DIM n AS NUMBER
+PRINT n
+n = 2.5
+PRINT n * 2
+
+DIM s AS STRING
+PRINT "[" & s & "]"
+DIM name AS STRING = "Ada"
+PRINT name
+
+DIM flag AS BOOLEAN
+PRINT flag
+DIM ok AS BOOLEAN = TRUE
+PRINT ok

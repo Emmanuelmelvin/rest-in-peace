@@ -1,0 +1,4 @@
+a = [10, 20]
+PRINT a[0]
+PRINT a[-1]
+PRINT "AFTER"

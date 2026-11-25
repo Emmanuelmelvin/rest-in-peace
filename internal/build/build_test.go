@@ -188,6 +188,8 @@ func TestBinaryPath(t *testing.T) {
 		{"dist/app.exe", "windows", "dist/app.exe"},
 		{"dist/APP.EXE", "windows", "dist/APP.EXE"},
 		{"dist/app.v2", "windows", "dist/app.v2.exe"},
+		{`dist\app`, "windows", `dist\app.exe`},
+		{`dist\app.exe`, "windows", `dist\app.exe`},
 		{"dist/app", "linux", "dist/app"},
 		{"dist/app", "darwin", "dist/app"},
 	} {
