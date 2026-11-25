@@ -1,0 +1,6 @@
+FOR i = 3 TO 1 STEP -1
+  PRINT i
+NEXT
+FOR i = 10 TO 0 STEP -4
+  PRINT i
+NEXT

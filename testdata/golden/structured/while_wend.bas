@@ -1,0 +1,8 @@
+n = 1
+WHILE n < 100
+  n = n * 3
+WEND
+PRINT n
+WHILE FALSE
+  PRINT "NEVER"
+WEND

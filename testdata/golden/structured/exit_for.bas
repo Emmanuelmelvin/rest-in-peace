@@ -1,0 +1,5 @@
+FOR i = 1 TO 10
+  IF i = 4 THEN EXIT FOR
+  PRINT i
+NEXT
+PRINT "AFTER"

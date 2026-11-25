@@ -1,0 +1,6 @@
+REM THIS LINE IS IGNORED
+' SO IS THIS ONE
+PRINT "A" ' AND THIS PART
+PRINT "DON'T STOP ' HERE"
+rem a lower-case rem works too
+PRINT "B"

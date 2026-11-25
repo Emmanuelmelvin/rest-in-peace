@@ -1,0 +1,26 @@
+x = 95
+IF x >= 90 THEN
+  PRINT "A"
+ELSEIF x >= 80 THEN
+  PRINT "B"
+ELSE
+  PRINT "C"
+END IF
+
+x = 85
+IF x >= 90 THEN
+  PRINT "A"
+ELSEIF x >= 80 THEN
+  PRINT "B"
+ELSE
+  PRINT "C"
+END IF
+
+x = 10
+IF x >= 90 THEN
+  PRINT "A"
+ELSEIF x >= 80 THEN
+  PRINT "B"
+ELSE
+  PRINT "C"
+END IF

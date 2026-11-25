@@ -1,0 +1,10 @@
+FOR i = 1 TO 4
+  SELECT CASE i
+    CASE 1
+      PRINT "ONE"
+    CASE 2, 3
+      PRINT "TWO OR THREE"
+    CASE ELSE
+      PRINT "MANY"
+  END SELECT
+NEXT
