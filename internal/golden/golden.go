@@ -60,7 +60,7 @@ func BuildAndRun(ctx context.Context, dir string, files []codegen.File, timeout 
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err = cmd.Run()
-	if errors.Is(runCtx.Err(), context.DeadlineExceeded) {
+	if err != nil && errors.Is(runCtx.Err(), context.DeadlineExceeded) {
 		return nil, fmt.Errorf("%w: still running after %s; stdout so far:\n%s", ErrTimeout, timeout, stdout.String())
 	}
 	out := &Outcome{Stdout: stdout.String(), Stderr: stderr.String()}
