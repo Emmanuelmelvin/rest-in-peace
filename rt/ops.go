@@ -248,15 +248,43 @@ func ToString(v Value) string {
 	}
 }
 
-// Print implements PRINT.
-// TODO(task 1.3): the ; and , separators of classic PRINT.
+// Print implements PRINT with default newline termination.
 func Print(vals ...Value) {
+	os.Stdout.WriteString(formatPrint("", vals))
+}
+
+// PrintSep implements PRINT with classic ; and , separators. Each byte of seps
+// is the separator after the matching value: ';' joins values with no space,
+// ',' writes a tab, and a trailing ';' or ',' (len(seps) >= len(vals))
+// suppresses the final newline.
+func PrintSep(seps string, vals ...Value) {
+	os.Stdout.WriteString(formatPrint(seps, vals))
+}
+
+func formatPrint(seps string, vals []Value) string {
 	var b strings.Builder
-	for _, v := range vals {
+	for i, v := range vals {
 		b.WriteString(ToString(v))
+		if i < len(seps) && seps[i] == ',' {
+			b.WriteByte('\t')
+		}
 	}
-	b.WriteByte('\n')
-	os.Stdout.WriteString(b.String())
+	trailing := false
+	if len(vals) == 0 {
+		if len(seps) > 0 {
+			if seps[0] == ',' {
+				b.WriteByte('\t')
+			}
+			trailing = seps[0] == ';' || seps[0] == ','
+		}
+	} else if len(seps) >= len(vals) {
+		last := seps[len(vals)-1]
+		trailing = last == ';' || last == ','
+	}
+	if !trailing {
+		b.WriteByte('\n')
+	}
+	return b.String()
 }
 
 func num(v Value) (i int64, f float64, isInt bool, ok bool) {

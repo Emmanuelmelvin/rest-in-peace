@@ -314,12 +314,17 @@ func (g *gen) cstmt(o *out, s ast.Stmt, sc *scope) {
 			step = g.expr(s.Step, sc)
 		}
 		tf, tt, ts := g.temp("rt.Value"), g.temp("rt.Value"), g.temp("rt.Value")
+		g.dir(o, s.At)
 		o.w(tf, " = ", from.code)
+		g.dir(o, s.At)
 		o.w(tt, " = ", to.code)
+		g.dir(o, s.At)
 		o.w(ts, " = ", step.code)
+		g.dir(o, s.At)
 		o.w(v.goName, " = ", coerce(gexpr{tf, tAny, false}, v.t))
 		top, end := g.label("for"), g.label("next")
 		o.w(top, ":")
+		g.dir(o, s.At)
 		g.ifNot(o, "rt.ForCond("+v.goName+", "+tt+", "+ts+")", end)
 		g.cloop(o, s.Body, sc, token.FOR, end)
 		g.dir(o, s.At)
@@ -332,6 +337,7 @@ func (g *gen) cstmt(o *out, s ast.Stmt, sc *scope) {
 		v := g.loopVar(s.Var, s.At, sc, false)
 		x := g.expr(s.In, sc)
 		items, i := g.temp("[]rt.Value"), g.temp("int")
+		g.dir(o, s.At)
 		o.w(items, " = rt.Iter(", x.code, ")")
 		o.w(i, " = 0")
 		top, end := g.label("each"), g.label("next")
@@ -339,6 +345,7 @@ func (g *gen) cstmt(o *out, s ast.Stmt, sc *scope) {
 		o.w("if ", i, " >= len(", items, ") {")
 		g.gotoLabel(o, end)
 		o.w("}")
+		g.dir(o, s.At)
 		o.w(v.goName, " = ", coerce(gexpr{items + "[" + i + "]", tAny, false}, v.t))
 		o.w(i, "++")
 		g.cloop(o, s.Body, sc, token.FOR, end)
@@ -349,6 +356,7 @@ func (g *gen) cstmt(o *out, s ast.Stmt, sc *scope) {
 	case *ast.WhileStmt:
 		top, end := g.label("while"), g.label("wend")
 		o.w(top, ":")
+		g.dir(o, s.At)
 		g.ifNot(o, truthy(g.expr(s.Cond, sc)), end)
 		g.cloop(o, s.Body, sc, token.WHILE, end)
 		g.guard(o)
@@ -373,7 +381,9 @@ func (g *gen) cstmt(o *out, s ast.Stmt, sc *scope) {
 	case *ast.SelectStmt:
 		x := g.expr(s.X, sc)
 		sel := gexpr{g.temp(x.t.goType()), x.t, false}
+		g.dir(o, s.At)
 		o.w(sel.code, " = ", x.code)
+		o.w("_ = ", sel.code)
 		end := g.label("endselect")
 		for _, c := range s.Cases {
 			if len(c.Values) == 0 {

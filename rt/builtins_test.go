@@ -88,23 +88,69 @@ func TestBuiltins(t *testing.T) {
 }
 
 func TestBuiltinErrors(t *testing.T) {
+	var nilMap *Map
+	var nilArr *Array
 	for name, tc := range map[string]struct {
 		f    func()
 		kind Kind
 	}{
-		"LEN number":  {func() { Len(int64(1)) }, KindTypeMismatch},
-		"UPPER NIL":   {func() { Upper(nil) }, KindTypeMismatch},
-		"MID start 0": {func() { Mid("x", int64(0)) }, KindBadSubscript},
-		"LEFT -1":     {func() { Left("x", int64(-1)) }, KindBadSubscript},
-		"INT string":  {func() { Int("1") }, KindTypeMismatch},
-		"ABS string":  {func() { Abs("1") }, KindTypeMismatch},
-		"AsInt 2.5":   {func() { AsInt(2.5) }, KindTypeMismatch},
-		"AsStr 1":     {func() { AsStr(int64(1)) }, KindTypeMismatch},
-		"Iter NIL":    {func() { Iter(nil) }, KindNilAccess},
-		"Set on NIL":  {func() { SetMember(nil, "a", int64(1)) }, KindNilAccess},
+		"LEN number":          {func() { Len(int64(1)) }, KindTypeMismatch},
+		"UPPER NIL":           {func() { Upper(nil) }, KindTypeMismatch},
+		"MID start 0":         {func() { Mid("x", int64(0)) }, KindBadSubscript},
+		"MID past end bad n":  {func() { Mid("HI", int64(5), int64(-1)) }, KindBadSubscript},
+		"MID past end str n":  {func() { Mid("HI", int64(5), "x") }, KindTypeMismatch},
+		"LEFT -1":             {func() { Left("x", int64(-1)) }, KindBadSubscript},
+		"INT string":          {func() { Int("1") }, KindTypeMismatch},
+		"ABS string":          {func() { Abs("1") }, KindTypeMismatch},
+		"AsInt 2.5":           {func() { AsInt(2.5) }, KindTypeMismatch},
+		"AsStr 1":             {func() { AsStr(int64(1)) }, KindTypeMismatch},
+		"Iter NIL":            {func() { Iter(nil) }, KindNilAccess},
+		"Set on NIL":          {func() { SetMember(nil, "a", int64(1)) }, KindNilAccess},
+		"Get typed nil map":   {func() { Get(nilMap, "a") }, KindNilAccess},
+		"Index typed nil map": {func() { Index(nilMap, "a") }, KindNilAccess},
+		"Set typed nil map":   {func() { SetMember(nilMap, "a", int64(1)) }, KindNilAccess},
+		"SetIdx typed nil m":  {func() { SetIndex(nilMap, "a", int64(1)) }, KindNilAccess},
+		"SetIdx typed nil a":  {func() { SetIndex(nilArr, int64(0), int64(1)) }, KindNilAccess},
+		"SetIdx arr str key":  {func() { SetIndex(ArrayOf(int64(1)), "a", int64(2)) }, KindTypeMismatch},
+		"Index empty array":   {func() { Index(ArrayOf(), int64(0)) }, KindBadSubscript},
+		"SetIdx empty array":  {func() { SetIndex(ArrayOf(), int64(0), int64(1)) }, KindBadSubscript},
+		"Index NaN":           {func() { Index(ArrayOf(int64(1)), math.NaN()) }, KindTypeMismatch},
+		"Index +Inf":          {func() { Index(ArrayOf(int64(1)), math.Inf(1)) }, KindTypeMismatch},
+		"Index 2^63 float":    {func() { Index(ArrayOf(int64(1)), math.Ldexp(1, 63)) }, KindTypeMismatch},
 	} {
 		if k := panicKind(tc.f); k != tc.kind {
 			t.Errorf("%s: got %q, want %q", name, k, tc.kind)
+		}
+	}
+}
+
+func TestPrintFormat(t *testing.T) {
+	tests := []struct {
+		name string
+		seps string
+		vals []Value
+		want string
+	}{
+		{"empty", "", nil, "\n"},
+		{"single", "", []Value{"READY."}, "READY.\n"},
+		{"multi default", "", []Value{"A", int64(1), "B"}, "A1B\n"},
+		{"semicolon between", ";", []Value{"A", "B"}, "AB\n"},
+		{"semicolon trailing", ";;", []Value{"A", "B"}, "AB"},
+		{"single trailing semicolon", ";", []Value{"A"}, "A"},
+		{"comma between", ",", []Value{"A", "B"}, "A\tB\n"},
+		{"comma trailing", ",,", []Value{"A", "B"}, "A\tB\t"},
+		{"single trailing comma", ",", []Value{"A"}, "A\t"},
+		{"mixed comma then semi", ",;", []Value{"A", int64(2), true}, "A\t2TRUE\n"},
+		{"mixed with trailing semi", ",;;", []Value{"A", int64(2), true}, "A\t2TRUE"},
+		{"mixed with trailing comma", ";,", []Value{"A", "B"}, "AB\t"},
+		{"non-sep terminator slot", ", ", []Value{"A", "B"}, "A\tB\n"},
+		{"bare semicolon", ";", nil, ""},
+		{"bare comma", ",", nil, "\t"},
+		{"nil and collections", ",", []Value{nil, ArrayOf(int64(1))}, "\t[1]\n"},
+	}
+	for _, tt := range tests {
+		if got := formatPrint(tt.seps, tt.vals); got != tt.want {
+			t.Errorf("%s: formatPrint(%q, %v) = %q, want %q", tt.name, tt.seps, tt.vals, got, tt.want)
 		}
 	}
 }

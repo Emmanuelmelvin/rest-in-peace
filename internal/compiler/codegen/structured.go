@@ -321,10 +321,11 @@ func (g *gen) stmt(o *out, s ast.Stmt, sc *scope) {
 		var body out
 		body.w("for _, rip_it", id, " := range rt.Iter(", x.code, ") {")
 		g.guard(&body)
+		g.dir(&body, s.At)
 		body.w(v.goName, " = ", coerce(gexpr{"rip_it" + id, tAny, false}, v.t))
 		g.loopBody(&body, s.Body, sc, lp)
 		body.w("}")
-		emitLabeled(o, lp, &body)
+		g.emitLabeled(o, s.At, lp, &body)
 
 	case *ast.WhileStmt:
 		lp := &loop{kind: token.WHILE, label: "rip_loop" + g.next()}
@@ -333,7 +334,7 @@ func (g *gen) stmt(o *out, s ast.Stmt, sc *scope) {
 		g.guard(&body)
 		g.loopBody(&body, s.Body, sc, lp)
 		body.w("}")
-		emitLabeled(o, lp, &body)
+		g.emitLabeled(o, s.At, lp, &body)
 
 	case *ast.DoStmt:
 		lp := &loop{kind: token.DO, label: "rip_loop" + g.next()}
@@ -348,12 +349,13 @@ func (g *gen) stmt(o *out, s ast.Stmt, sc *scope) {
 			body.w("}")
 		}
 		body.w("}")
-		emitLabeled(o, lp, &body)
+		g.emitLabeled(o, s.At, lp, &body)
 
 	case *ast.SelectStmt:
 		x := g.expr(s.X, sc)
 		sel := gexpr{"rip_sel" + g.next(), x.t, false}
 		o.w("{")
+		g.dir(o, s.At)
 		o.w("var ", sel.code, " ", x.t.goType(), " = ", x.code)
 		o.w("_ = ", sel.code)
 		o.w("switch {")
@@ -411,8 +413,11 @@ func (g *gen) forStmt(o *out, s *ast.ForStmt, sc *scope) {
 	fromV, toV, stepV := "rip_from"+id, "rip_to"+id, "rip_step"+id
 	T := v.t.goType()
 	o.w("{")
+	g.dir(o, s.At)
 	o.w("var ", fromV, " ", T, " = ", coerce(from, v.t))
+	g.dir(o, s.At)
 	o.w("var ", toV, " ", T, " = ", coerce(to, v.t))
+	g.dir(o, s.At)
 	o.w("var ", stepV, " ", T, " = ", coerce(step, v.t))
 	o.w(v.goName, " = ", fromV)
 	var cond, post string
@@ -430,7 +435,7 @@ func (g *gen) forStmt(o *out, s *ast.ForStmt, sc *scope) {
 	g.dir(&body, s.At)
 	body.w(post)
 	body.w("}")
-	emitLabeled(o, lp, &body)
+	g.emitLabeled(o, s.At, lp, &body)
 	o.w("}")
 }
 
@@ -457,11 +462,13 @@ func (g *gen) loopBody(o *out, body []ast.Stmt, sc *scope, lp *loop) {
 }
 
 // emitLabeled writes a loop, with its label only if an EXIT uses it (Go
-// rejects unused labels).
-func emitLabeled(o *out, lp *loop, body *out) {
+// rejects unused labels). Re-emitting //line after the label keeps the loop
+// header on the BASIC line of the loop statement.
+func (g *gen) emitLabeled(o *out, p token.Pos, lp *loop, body *out) {
 	if lp.used {
 		o.w(lp.label, ":")
 	}
+	g.dir(o, p)
 	o.appendOut(body)
 }
 

@@ -67,6 +67,10 @@ func Mid(s, start Value, n ...Value) string {
 	if st < 1 {
 		panic(Errorf(KindBadSubscript, "MID starts counting at 1, got %d", st))
 	}
+	var k int64
+	if len(n) > 0 {
+		k = countArg("MID", n[0])
+	}
 	if st > int64(len(r)) {
 		return ""
 	}
@@ -74,7 +78,6 @@ func Mid(s, start Value, n ...Value) string {
 	if len(n) == 0 {
 		return string(rest)
 	}
-	k := countArg("MID", n[0])
 	if k > int64(len(rest)) {
 		k = int64(len(rest))
 	}

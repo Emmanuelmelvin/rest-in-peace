@@ -230,6 +230,11 @@ func (g *gen) callUser(e *ast.CallExpr, fn *fnInfo, sc *scope, asStmt bool) gexp
 }
 
 func (g *gen) unary(e *ast.UnaryExpr, sc *scope) gexpr {
+	if e.Op == token.Minus {
+		if lit, ok := e.X.(*ast.NumberLit); ok && lit.IsInt && lit.Text == "9223372036854775808" {
+			return gexpr{"int64(-9223372036854775808)", tInt, true}
+		}
+	}
 	x := g.expr(e.X, sc)
 	switch e.Op {
 	case token.Minus:

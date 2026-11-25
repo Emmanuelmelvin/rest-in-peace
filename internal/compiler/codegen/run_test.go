@@ -97,6 +97,9 @@ func TestPrograms(t *testing.T) {
 		{name: "golden structured/print_basics", golden: "structured/print_basics.out", prog: goldenPrintBasics()},
 		{name: "golden structured/functions", golden: "structured/functions.out", prog: goldenFunctions()},
 		{name: "golden structured/function_locals", golden: "structured/function_locals.out", prog: goldenFunctionLocals()},
+		{name: "golden structured/and_or_short_circuit", golden: "structured/and_or_short_circuit.out", prog: goldenShortCircuit()},
+		{name: "golden structured/forward_call", golden: "structured/forward_call.out", prog: goldenForwardCall()},
+		{name: "golden structured/string_plus_vs_amp", golden: "structured/string_plus_vs_amp.out", prog: goldenStringPlusVsAmp()},
 		{name: "golden classic/count", golden: "classic/count.out", prog: goldenCount()},
 		{name: "golden classic/gosub", golden: "classic/gosub.out", prog: goldenGosub()},
 		literals(),
@@ -117,6 +120,7 @@ func TestPrograms(t *testing.T) {
 		classicJumps(),
 		classicNested(),
 		classicBlocks(),
+		edgeCases(),
 	}
 	for _, c := range cases {
 		c := c
@@ -173,6 +177,49 @@ func goldenFunctionLocals() *ast.Program {
 			let(6, id("x"), str("LOCAL")),
 			pr(7, id("x")),
 		),
+	)
+}
+
+// testdata/golden/structured/and_or_short_circuit.bas
+func goldenShortCircuit() *ast.Program {
+	return structured("and_or_short_circuit.bas",
+		function(1, "Loud", params(param("label", "", nil), param("v", "", nil)), "",
+			pr(2, bin(str("CALLED "), token.Amp, id("label"))),
+			ret(3, id("v")),
+		),
+		pr(6, bin(boolean(false), token.AND, call("Loud", str("A"), boolean(true)))),
+		pr(7, bin(boolean(true), token.OR, call("Loud", str("B"), boolean(true)))),
+		pr(8, bin(boolean(true), token.AND, call("Loud", str("C"), boolean(false)))),
+		pr(9, bin(boolean(false), token.OR, call("Loud", str("D"), boolean(true)))),
+		pr(10, not(boolean(true))),
+	)
+}
+
+// testdata/golden/structured/forward_call.bas
+func goldenForwardCall() *ast.Program {
+	n := id("n")
+	return structured("forward_call.bas",
+		pr(1, call("IsEven", num(10))),
+		pr(2, call("IsEven", num(7))),
+		function(4, "IsEven", params(param("n", "", nil)), "",
+			iff(5, bin(n, token.Eq, num(0)), stmts(ret(5, boolean(true)))),
+			ret(6, call("IsOdd", bin(n, token.Minus, num(1)))),
+		),
+		function(9, "IsOdd", params(param("n", "", nil)), "",
+			iff(10, bin(n, token.Eq, num(0)), stmts(ret(10, boolean(false)))),
+			ret(11, call("IsEven", bin(n, token.Minus, num(1)))),
+		),
+	)
+}
+
+// testdata/golden/structured/string_plus_vs_amp.bas
+func goldenStringPlusVsAmp() *ast.Program {
+	return structured("string_plus_vs_amp.bas",
+		pr(1, bin(str("A"), token.Plus, str("B"))),
+		pr(2, bin(str("N="), token.Plus, num(5))),
+		pr(3, bin(bin(str("1"), token.Plus, num(2)), token.Plus, num(3))),
+		pr(4, bin(bin(num(1), token.Plus, num(2)), token.Amp, num(3))),
+		pr(5, bin(num(1), token.Amp, bin(num(2), token.Plus, num(3)))),
 	)
 }
 
@@ -589,5 +636,27 @@ func classicBlocks() outCase {
 		ln(100, 10, forS(10, "I", num(3), num(1), neg(num(1)), pr(10, i))),
 		ln(110, 11, doLoop(11, nil, let(11, n, bin(n, token.Plus, num(1))), iff(11, bin(n, token.Gt, num(5)), stmts(exit(11, token.DO))))),
 		ln(120, 12, pr(12, n), iff(12, boolean(false), stmts(pr(12, str("NO"))), pr(12, str("ELSE")))),
-	), stdout: "3\n4\nFOUR\n2\n10\n20\n10\nCONST\n3\n2\n1\n6\nELSE\n"}
+		ln(130, 13, sel(13, num(1), stmts(pr(13, str("ONLY ELSE"))))), // no CASE clauses must still compile
+	), stdout: "3\n4\nFOUR\n2\n10\n20\n10\nCONST\n3\n2\n1\n6\nELSE\nONLY ELSE\n"}
+}
+
+func edgeCases() outCase {
+	return outCase{name: "edge cases", prog: structured("edges.bas",
+		pr(1), // bare PRINT
+		pr(2, neg(&ast.NumberLit{Text: "9223372036854775808", IsInt: true})),
+		forS(3, "i", num(5), num(1), num(0), pr(4, str("NEVER"))), // STEP 0 with from > to runs 0 times
+		cnst(5, "K", num(1)),
+		pr(6, call("ShadowConst")),
+		pr(7, id("K")),
+		pr(8, call("LoopParam", num(3))),
+		function(10, "ShadowConst", nil, "",
+			cnst(11, "K", num(2)),
+			ret(12, id("K")),
+		),
+		function(14, "LoopParam", params(param("n", "INTEGER", nil)), "INTEGER",
+			dim(15, "acc", "INTEGER", num(0)),
+			forS(16, "n", num(1), id("n"), nil, let(17, id("acc"), bin(id("acc"), token.Plus, id("n")))),
+			ret(18, id("acc")),
+		),
+	), stdout: "\n-9223372036854775808\n2\n1\n6\n"}
 }

@@ -265,11 +265,8 @@ func (o *out) appendOut(x *out) { o.b.WriteString(x.String()) }
 // dir writes the //line directive that maps the next Go line to a BASIC line
 // (design §4.5). It must start at column 1.
 func (g *gen) dir(o *out, p token.Pos) {
-	line := p.Line
-	if line < 1 {
-		line = 1
-	}
-	o.w("//line ", g.file.Name, ":", strconv.Itoa(line))
+	p = g.pos(p)
+	o.w("//line ", p.File, ":", strconv.Itoa(p.Line))
 }
 
 func (g *gen) next() string {
