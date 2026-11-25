@@ -12,10 +12,12 @@ import (
 // Scoping rules (structured mode):
 //   - Every name assigned in top-level code (LET, DIM, CONST, FOR and FOR EACH
 //     variables, at any block depth) is a module-level variable: a Go package var.
-//   - Inside a FUNCTION or SUB, parameters, DIM, CONST, and FOR / FOR EACH
-//     variables are locals. LET of a module-level name assigns that variable
-//     (Requirement 14.4 warns about it in handlers); LET of any other name
-//     makes a local.
+//   - Inside a FUNCTION or SUB, every name the function assigns (parameters,
+//     LET, DIM, CONST, FOR and FOR EACH variables) is local, even when a
+//     module-level variable has the same name, as in QBasic
+//     (testdata/golden/structured/function_locals.bas). A name the function
+//     only reads is the module-level variable or CONST. Module-level maps
+//     and arrays can still be changed through x.name = … and x[i] = ….
 //   - Locals live for the whole function, as in BASIC, so they are declared
 //     at the top of the Go function.
 
@@ -203,8 +205,11 @@ func (g *gen) collectLocals(fn *fnInfo) {
 		g.declare(v, kind, s, sc)
 	})
 	g.collectDecls(fn.decl.Body, sc, func(kind declKind, name string, p token.Pos, s ast.Stmt, sc *scope) {
-		if kind != declLet || fn.locals[name] != nil || g.globals[name] != nil || conflict(name, p) {
+		if kind != declLet || fn.locals[name] != nil || conflict(name, p) {
 			return
+		}
+		if gv := g.globals[name]; gv != nil && gv.konst {
+			return // assigning a module-level CONST is reported where it happens
 		}
 		add(&varInfo{name: name, goName: g.mangle(name)})
 	})

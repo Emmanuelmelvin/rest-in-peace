@@ -96,6 +96,7 @@ func TestPrograms(t *testing.T) {
 	cases := []outCase{
 		{name: "golden structured/print_basics", golden: "structured/print_basics.out", prog: goldenPrintBasics()},
 		{name: "golden structured/functions", golden: "structured/functions.out", prog: goldenFunctions()},
+		{name: "golden structured/function_locals", golden: "structured/function_locals.out", prog: goldenFunctionLocals()},
 		{name: "golden classic/count", golden: "classic/count.out", prog: goldenCount()},
 		{name: "golden classic/gosub", golden: "classic/gosub.out", prog: goldenGosub()},
 		literals(),
@@ -158,6 +159,19 @@ func goldenFunctions() *ast.Program {
 		),
 		function(8, "Greet", params(param("name", "", nil), param("greeting", "", str("HELLO"))), "",
 			ret(9, bin(bin(id("greeting"), token.Amp, str(", ")), token.Amp, id("name"))),
+		),
+	)
+}
+
+// testdata/golden/structured/function_locals.bas
+func goldenFunctionLocals() *ast.Program {
+	return structured("function_locals.bas",
+		let(1, id("x"), str("GLOBAL")),
+		do(2, call("Change")),
+		pr(3, id("x")),
+		sub(5, "Change", nil,
+			let(6, id("x"), str("LOCAL")),
+			pr(7, id("x")),
 		),
 	)
 }
@@ -470,22 +484,25 @@ func functionsAndSubs() outCase {
 
 func scoping() outCase {
 	return outCase{name: "module variables and locals", prog: structured("scope.bas",
-		let(1, id("count"), num(0)),
-		do(2, call("Bump")),
+		let(1, id("count"), num(5)),
+		let(2, id("state"), mapl("hits", num(0))),
 		do(3, call("Bump")),
-		pr(4, id("count")),
-		forS(5, "i", num(1), num(2), nil, pr(6, call("Inner", id("i")))),
-		pr(7, bin(str("I="), token.Amp, id("i"))),
+		do(4, call("Bump")),
+		pr(5, id("count")),
+		pr(6, id("state")),
+		forS(7, "i", num(1), num(2), nil, pr(8, call("Inner", id("i")))),
+		pr(9, bin(str("I="), token.Amp, id("i"))),
 		sub(10, "Bump", nil,
-			let(11, id("count"), bin(id("count"), token.Plus, num(1))),
-			let(12, id("scratch"), num(99)),
+			pr(11, bin(id("count"), token.Plus, num(1))), // reads the module-level count
+			let(12, mem(id("state"), "hits"), bin(mem(id("state"), "hits"), token.Plus, num(1))),
+			let(13, id("scratch"), num(99)),
 		),
 		function(14, "Inner", params(param("n", "", nil)), "",
 			let(15, id("acc"), num(0)),
 			forS(16, "i", num(1), id("n"), nil, let(17, id("acc"), bin(id("acc"), token.Plus, num(10)))),
 			ret(18, id("acc")),
 		),
-	), stdout: "2\n10\n20\nI=3\n"}
+	), stdout: "6\n6\n5\n" + `{"hits":2}` + "\n10\n20\nI=3\n"}
 }
 
 func endStatement() outCase {
