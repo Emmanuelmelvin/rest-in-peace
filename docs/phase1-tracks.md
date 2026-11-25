@@ -17,4 +17,4 @@ Phase 1 (the compiler core, tasks 1.1–1.9 in `.kiro/specs/rip-basic/tasks.md`)
 6. **Don't tick boxes in `tasks.md`**; they're ticked at merge time.
 
 ## Merge order
-C (merged) → B → A into `main`, then the full golden suite runs. That's the first time the compiler works end to end: `.bas` → tokens → AST → Go → binary → output compared with the `.out` files.
+C (merged, #2) → B (merged, #3) → A (merged, #4) into `main`, then the full 86-program golden suite passed end to end: `.bas` → tokens → AST → check → Go → binary → output compared with `.out` / `.stderr` / `.err` files.

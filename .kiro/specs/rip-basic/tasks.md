@@ -14,25 +14,25 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
 
 ## Phase 1 — Compiler core (Wed 25 – Fri 27 Nov)
 
-- [ ] 1.1 `P0` Lexer with file/line/col positions; keywords; numbers, strings, line numbers; `REM` and `'` comments; mode detection
+- [x] 1.1 `P0` Lexer with file/line/col positions; keywords; numbers, strings, line numbers; `REM` and `'` comments; mode detection
   - `internal/compiler/lexer`, `internal/compiler/token`
   - _Requirements: 1.1–1.4, 1.6_
-- [ ] 1.2 `P0` Pratt expression parser: literals, JSON maps and arrays, member/index/call, operator precedence, short-circuit `AND`/`OR`
+- [x] 1.2 `P0` Pratt expression parser: literals, JSON maps and arrays, member/index/call, operator precedence, short-circuit `AND`/`OR`
   - `internal/compiler/parser`, `internal/compiler/ast`
   - _Requirements: 3.5, 3.6, 1.5_
-- [ ] 1.3 `P0` Structured statements: IF/ELSEIF/ELSE, single-line IF, FOR/FOR EACH, WHILE, DO, SELECT CASE, EXIT
+- [x] 1.3 `P0` Structured statements: IF/ELSEIF/ELSE, single-line IF, FOR/FOR EACH, WHILE, DO, SELECT CASE, EXIT
   - _Requirements: 2.1_
-- [ ] 1.4 `P0` FUNCTION/SUB, params with defaults, locals, CONST, DIM AS TYPE, forward references
+- [x] 1.4 `P0` FUNCTION/SUB, params with defaults, locals, CONST, DIM AS TYPE, forward references
   - _Requirements: 3.2, 3.4, 4.1–4.4_
-- [ ] 1.5 `P0` Go codegen for structured mode: `rt.Value` helpers, native types for typed declarations, `//line` directives, name mangling
+- [x] 1.5 `P0` Go codegen for structured mode: `rt.Value` helpers, native types for typed declarations, `//line` directives, name mangling
   - `internal/compiler/codegen`
   - _Requirements: 3.3, 6.6; design §4.2–4.5_
 - [x] 1.6 `P0` Build pipeline: write `.rip/build`, copy embedded `rt`, generate `go.mod` from build info, run `go build`
   - `internal/build`
   - _Requirements: 13; design §4.1_
-- [ ] 1.7 `P0` Classic mode: labels and native `goto`, GOSUB/RETURN stack, ON…GOTO, duplicate-line replacement
+- [x] 1.7 `P0` Classic mode: labels and native `goto`, GOSUB/RETURN stack, ON…GOTO, duplicate-line replacement
   - _Requirements: 1.6, 2.2, 2.3; design §4.7_
-- [ ] 1.8 `P0` Classic-style diagnostics with hints, e.g. `?SYNTAX ERROR IN x.bas:3 — expected THEN after IF condition`
+- [x] 1.8 `P0` Classic-style diagnostics with hints, e.g. `?SYNTAX ERROR IN x.bas:3 — expected THEN after IF condition`
   - `internal/compiler/diag`
   - _Requirements: 6.6_
 - [x] 1.9 `P0` Golden test runner, and the first 30 golden programs
