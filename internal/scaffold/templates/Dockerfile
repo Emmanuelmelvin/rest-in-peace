@@ -1,6 +1,6 @@
 # Build stage: BASIC → Go → one static binary.
 FROM golang:1.24 AS build
-RUN go install github.com/rip-basic/rip/cmd/rip@latest
+RUN go install github.com/Emmanuelmelvin/rest-in-peace/cmd/rip@latest
 WORKDIR /src
 COPY . .
 RUN rip build --os linux --arch amd64 -o /out/app

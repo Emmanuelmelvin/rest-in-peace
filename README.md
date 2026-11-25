@@ -32,7 +32,7 @@ Built for Kiroween 2026 (Resurrection category).
 Requires **Go 1.24+**.
 
 ```sh
-go install github.com/rip-basic/rip/cmd/rip@latest
+go install github.com/Emmanuelmelvin/rest-in-peace/cmd/rip@latest
 rip new shop && cd shop
 rip dev            # http://localhost:8080/hello
 rip test

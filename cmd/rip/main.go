@@ -4,7 +4,7 @@ package main
 import (
 	"os"
 
-	"github.com/rip-basic/rip/internal/cli"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/cli"
 )
 
 func main() {

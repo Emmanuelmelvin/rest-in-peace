@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rip-basic/rip/internal/compiler"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler"
 )
 
 const root = "../../testdata/golden"

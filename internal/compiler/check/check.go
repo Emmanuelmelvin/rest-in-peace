@@ -2,8 +2,8 @@
 package check
 
 import (
-	"github.com/rip-basic/rip/internal/compiler/ast"
-	"github.com/rip-basic/rip/internal/compiler/diag"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/ast"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/diag"
 )
 
 // Check validates a whole program.

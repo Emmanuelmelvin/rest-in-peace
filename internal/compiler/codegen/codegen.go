@@ -3,9 +3,9 @@
 package codegen
 
 import (
-	"github.com/rip-basic/rip/internal/compiler/ast"
-	"github.com/rip-basic/rip/internal/compiler/diag"
-	"github.com/rip-basic/rip/internal/compiler/token"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/ast"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/diag"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/token"
 )
 
 // RuntimeImport is the import path of the runtime inside a build directory.

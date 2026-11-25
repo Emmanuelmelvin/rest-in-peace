@@ -1,7 +1,7 @@
 // Package ast defines the syntax tree of RIP BASIC.
 package ast
 
-import "github.com/rip-basic/rip/internal/compiler/token"
+import "github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/token"
 
 // Node is any syntax tree node.
 type Node interface{ Pos() token.Pos }

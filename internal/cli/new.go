@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/rip-basic/rip/internal/scaffold"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/scaffold"
 )
 
 var validName = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]*$`)

@@ -14,8 +14,8 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/rip-basic/rip/internal/build"
-	"github.com/rip-basic/rip/internal/compiler"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/build"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler"
 )
 
 type command struct {

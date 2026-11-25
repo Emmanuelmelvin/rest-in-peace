@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/rip-basic/rip/internal/build"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/build"
 )
 
 func runBuild(args []string) int {

@@ -20,8 +20,8 @@ import (
 	"runtime/debug"
 	"strings"
 
-	rip "github.com/rip-basic/rip"
-	"github.com/rip-basic/rip/internal/compiler/codegen"
+	rip "github.com/Emmanuelmelvin/rest-in-peace"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/codegen"
 )
 
 // ModulePath is the module name of every build directory; the runtime is ModulePath + "/rt".

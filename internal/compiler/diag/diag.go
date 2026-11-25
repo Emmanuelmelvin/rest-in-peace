@@ -6,7 +6,7 @@ package diag
 import (
 	"fmt"
 
-	"github.com/rip-basic/rip/internal/compiler/token"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/token"
 )
 
 // Severity separates errors, which stop compilation, from warnings.

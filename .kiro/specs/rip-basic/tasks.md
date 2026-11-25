@@ -9,7 +9,7 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
 
 - [x] 0.1 `P0` Repository scaffold: Go module, CLI skeleton, compiler/runtime/build/playground packages, examples, golden test layout, `/.kiro` specs, steering and hooks, MIT license, CI
   - _Requirements: 16.1_
-- [ ] 0.2 `P0` Replace the placeholder module path `github.com/rip-basic/rip` with the real GitHub repo path; push the public repo
+- [x] 0.2 `P0` Set the module path to `github.com/Emmanuelmelvin/rest-in-peace` and push the public repo
   - _Requirements: 16.1_
 
 ## Phase 1 — Compiler core (Wed 25 – Fri 27 Nov)

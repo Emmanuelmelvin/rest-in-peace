@@ -2,8 +2,8 @@
 package lexer
 
 import (
-	"github.com/rip-basic/rip/internal/compiler/diag"
-	"github.com/rip-basic/rip/internal/compiler/token"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/diag"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/token"
 )
 
 // Lex splits one .bas file into tokens and reports whether it is classic or

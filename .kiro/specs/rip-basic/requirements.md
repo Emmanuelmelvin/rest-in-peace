@@ -281,7 +281,7 @@ These were not settled in the original spec. The proposed defaults are used in `
 | How does `DECIMAL` serialize to JSON? | As a string that keeps its scale: `"215.00"` |
 | Which rounding mode does `ROUND` use? | Half away from zero |
 | `rip test` uses SQLite but production uses Postgres. How do migrations work on both? | Write migrations in the portable SQL subset; `rip check` warns on Postgres-only syntax. Teams can set `TEST_DATABASE_URL` to a real Postgres. |
-| What is the Go module path? | `github.com/rip-basic/rip`, a placeholder to replace with the real repo path |
+| What is the Go module path? | Decided: `github.com/Emmanuelmelvin/rest-in-peace` |
 | What do classic handlers do under concurrency? | Run one at a time per program (7.10) |
 | Should named `.bas` imports use braces, like Go imports? | Yes: `IMPORT { A, B } FROM "./x.bas"`, so braces always mean named imports |
 | Where does a classic program's top-level run stop? | At `SERVE` or `END`; later lines run only as GOSUB targets (matches the classic Hello World) |

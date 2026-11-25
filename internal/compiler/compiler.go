@@ -6,12 +6,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rip-basic/rip/internal/compiler/ast"
-	"github.com/rip-basic/rip/internal/compiler/check"
-	"github.com/rip-basic/rip/internal/compiler/codegen"
-	"github.com/rip-basic/rip/internal/compiler/diag"
-	"github.com/rip-basic/rip/internal/compiler/lexer"
-	"github.com/rip-basic/rip/internal/compiler/parser"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/ast"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/check"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/codegen"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/diag"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/lexer"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/parser"
 )
 
 // Options control compilation.

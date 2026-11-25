@@ -1,3 +1,3 @@
-module github.com/rip-basic/rip
+module github.com/Emmanuelmelvin/rest-in-peace
 
 go 1.24

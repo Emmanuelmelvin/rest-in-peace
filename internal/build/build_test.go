@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rip-basic/rip/internal/compiler/codegen"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/codegen"
 )
 
 // TestBuildLinksRuntime proves the riskiest piece of the pipeline works end to end:

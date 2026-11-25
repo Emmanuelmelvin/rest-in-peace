@@ -3,7 +3,7 @@ package diag
 import (
 	"testing"
 
-	"github.com/rip-basic/rip/internal/compiler/token"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/token"
 )
 
 func TestClassicFormat(t *testing.T) {

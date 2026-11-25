@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rip-basic/rip/internal/build"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/build"
 )
 
 func runRun(args []string) int {

@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rip-basic/rip/internal/playground"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/playground"
 )
 
 func main() {
