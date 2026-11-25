@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -149,6 +150,9 @@ func Get(v Value, key string) Value {
 	case nil:
 		panic(Errorf(KindNilAccess, "cannot read %q of NIL — check the value exists before using it", key))
 	case *Map:
+		if x == nil {
+			panic(Errorf(KindNilAccess, "cannot read %q of NIL — check the value exists before using it", key))
+		}
 		val, _ := x.Get(key)
 		return val
 	default:
@@ -163,6 +167,9 @@ func Index(v Value, i Value) Value {
 	case nil:
 		panic(Errorf(KindNilAccess, "cannot index NIL"))
 	case *Map:
+		if x == nil {
+			panic(Errorf(KindNilAccess, "cannot index NIL"))
+		}
 		k, ok := i.(string)
 		if !ok {
 			panic(Errorf(KindTypeMismatch, "map keys are STRINGs, got %s", TypeName(i)))
@@ -178,7 +185,7 @@ func Index(v Value, i Value) Value {
 			panic(Errorf(KindTypeMismatch, "array index must be a whole NUMBER, got %s", TypeName(i)))
 		}
 		if n < 0 || n >= int64(len(x.Items)) {
-			panic(Errorf(KindBadSubscript, "index %d is outside 0..%d — arrays start at 0", n, len(x.Items)-1))
+			panic(badSubscript(n, len(x.Items)))
 		}
 		return x.Items[n]
 	default:
@@ -188,26 +195,43 @@ func Index(v Value, i Value) Value {
 
 // SetMember implements v.name = val.
 func SetMember(v Value, key string, val Value) {
-	m, ok := v.(*Map)
-	if !ok || m == nil {
+	switch x := v.(type) {
+	case nil:
+		panic(Errorf(KindNilAccess, "cannot set %q on NIL — create the map first, e.g. x = {}", key))
+	case *Map:
+		if x == nil {
+			panic(Errorf(KindNilAccess, "cannot set %q on NIL — create the map first, e.g. x = {}", key))
+		}
+		x.Set(key, val)
+	default:
 		panic(Errorf(KindTypeMismatch, "cannot set %q on a %s", key, TypeName(v)))
 	}
-	m.Set(key, val)
 }
 
 // SetIndex implements v[i] = val.
 func SetIndex(v Value, i Value, val Value) {
 	switch x := v.(type) {
+	case nil:
+		panic(Errorf(KindNilAccess, "cannot index NIL"))
 	case *Map:
+		if x == nil {
+			panic(Errorf(KindNilAccess, "cannot index NIL"))
+		}
 		k, ok := i.(string)
-		if !ok || x == nil {
+		if !ok {
 			panic(Errorf(KindTypeMismatch, "map keys are STRINGs, got %s", TypeName(i)))
 		}
 		x.Set(k, val)
 	case *Array:
+		if x == nil {
+			panic(Errorf(KindNilAccess, "cannot index NIL"))
+		}
 		n, ok := toInt(i)
-		if !ok || x == nil || n < 0 || n >= int64(len(x.Items)) {
-			panic(Errorf(KindBadSubscript, "cannot set index %v", i))
+		if !ok {
+			panic(Errorf(KindTypeMismatch, "array index must be a whole NUMBER, got %s", TypeName(i)))
+		}
+		if n < 0 || n >= int64(len(x.Items)) {
+			panic(badSubscript(n, len(x.Items)))
 		}
 		x.Items[n] = val
 	default:
@@ -215,8 +239,17 @@ func SetIndex(v Value, i Value, val Value) {
 	}
 }
 
-// Truthy decides IF/WHILE conditions for dynamic values.
-// TODO(task 1.5): confirm in the spec whether non-BOOLEAN conditions should be a TYPE MISMATCH instead.
+func badSubscript(n int64, length int) *Error {
+	if length == 0 {
+		return Errorf(KindBadSubscript, "index %d is outside an empty array — arrays start at 0", n)
+	}
+	return Errorf(KindBadSubscript, "index %d is outside 0..%d — arrays start at 0", n, length-1)
+}
+
+// Truthy decides IF, WHILE, UNTIL, NOT, AND and OR for dynamic values.
+// Non-BOOLEAN conditions are allowed, as in classic BASIC (IF X THEN …):
+// NIL, FALSE, 0 and "" are false, and everything else is true. That also
+// makes the common IF B.title THEN … work without a comparison.
 func Truthy(v Value) bool {
 	switch x := v.(type) {
 	case nil:
@@ -263,7 +296,7 @@ func toInt(v Value) (int64, bool) {
 	case int64:
 		return x, true
 	case float64:
-		if x == float64(int64(x)) {
+		if x == math.Trunc(x) && x >= math.MinInt64 && x < math.MaxInt64 {
 			return int64(x), true
 		}
 	}
