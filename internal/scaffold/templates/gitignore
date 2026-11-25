@@ -1,0 +1,4 @@
+.rip/
+dist/
+.env
+*.db

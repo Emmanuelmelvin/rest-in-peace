@@ -1,0 +1,149 @@
+/* CRT green-phosphor theme (Requirement 15.7). */
+:root {
+  --bg: #031103;
+  --fg: #33ff66;
+  --dim: #1a9c3d;
+  --glow: 0 0 4px rgba(51, 255, 102, 0.6);
+  --font: "IBM Plex Mono", "Cascadia Mono", "Consolas", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+}
+
+.crt {
+  min-height: 100vh;
+  padding: 16px;
+  text-shadow: var(--glow);
+  position: relative;
+}
+
+/* Scanlines */
+.crt::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
+  animation: flicker 4s infinite;
+}
+
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+header h1 {
+  margin: 0;
+  letter-spacing: 0.2em;
+}
+
+header p {
+  margin: 4px 0 16px;
+  color: var(--dim);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.toolbar a {
+  color: var(--fg);
+  word-break: break-all;
+}
+
+select,
+button {
+  font: inherit;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--fg);
+  padding: 4px 12px;
+  text-shadow: var(--glow);
+}
+
+button:hover:not(:disabled) {
+  background: var(--fg);
+  color: var(--bg);
+  text-shadow: none;
+}
+
+button:disabled {
+  opacity: 0.6;
+}
+
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 12px;
+}
+
+@media (max-width: 800px) {
+  main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.editor,
+.log {
+  border: 1px solid var(--dim);
+  min-height: 60vh;
+  overflow: auto;
+}
+
+.log {
+  padding: 8px;
+  white-space: pre-wrap;
+}
+
+.cursor {
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.cm-editor {
+  height: 100%;
+  background: transparent;
+  color: var(--fg);
+  font-family: var(--font);
+}
+
+.cm-gutters {
+  background: transparent !important;
+  color: var(--dim) !important;
+  border-right: 1px solid var(--dim) !important;
+}
+
+.cm-cursor {
+  border-left-color: var(--fg) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crt::after,
+  .cursor {
+    animation: none;
+  }
+}

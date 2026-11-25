@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Example tests on save",
+  "description": "When anything under examples/ changes, run that example's BASIC tests.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "examples/**/*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A file under examples/ was just saved. Find the example's project root (the nearest directory with rip.json or main.bas) and run `go run ./cmd/rip test` there. Report failures with their BASIC file:line and propose fixes. The Invoicing API is the demo centrepiece, so keep it passing."
+  }
+}

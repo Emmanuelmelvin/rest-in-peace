@@ -1,0 +1,4 @@
+-- rip migrate applies migrations/*.sql in name order, once each,
+-- and records them in the _rip_migrations table.
+-- Example:
+-- CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);

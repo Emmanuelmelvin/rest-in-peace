@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "rip check on .bas save",
+  "description": "Compile-check any saved .bas file and surface BASIC-style errors and warnings, including the SQL injection lint.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.bas"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A .bas file was just saved. Run `go run ./cmd/rip check <that file>` from the repo root. Report every ?… ERROR and ?… WARNING with its file:line. Treat ?INJECTION RISK WARNING as a must-fix: rewrite the query to use $1 placeholders. Follow .kiro/steering/language.md and never invent syntax."
+  }
+}

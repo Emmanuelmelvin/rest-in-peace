@@ -1,0 +1,23 @@
+# rip build output
+.rip/
+dist/
+
+# Go
+/rip
+/rip.exe
+/playground.exe
+coverage.out
+
+# Front end
+node_modules/
+playground/web/dist/
+
+# Local secrets and databases (.env.example and .env.test are committed)
+.env
+*.db
+
+# Editors and OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

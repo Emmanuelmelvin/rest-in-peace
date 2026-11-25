@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Golden tests on compiler/runtime save",
+  "description": "When compiler or runtime Go code changes, run the unit and golden tests and fix any regressions.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "internal/compiler/**/*.go",
+      "rt/**/*.go",
+      "internal/build/**/*.go"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A compiler or runtime file was just saved. Run `go vet ./...` and `go test ./internal/... ./rt/...`. If a golden test fails, show the diff between expected and actual output, decide whether the code or the golden file is wrong (check .kiro/specs/rip-basic/requirements.md), and propose the fix. Do not update a golden file just to make a test pass unless the spec says the new output is correct."
+  }
+}

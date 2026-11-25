@@ -1,0 +1,5 @@
+10 LET I = 1
+20 PRINT I
+30 I = I + 1
+40 IF I <= 3 THEN GOTO 20
+50 END

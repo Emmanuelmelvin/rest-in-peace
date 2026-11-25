@@ -1,0 +1,4 @@
+PRINT "READY."
+LET x = 2 + 3
+PRINT x
+PRINT "TOTAL: " & x
