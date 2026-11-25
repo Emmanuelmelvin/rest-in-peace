@@ -27,7 +27,7 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
 - [ ] 1.5 `P0` Go codegen for structured mode: `rt.Value` helpers, native types for typed declarations, `//line` directives, name mangling
   - `internal/compiler/codegen`
   - _Requirements: 3.3, 6.6; design §4.2–4.5_
-- [ ] 1.6 `P0` Build pipeline: write `.rip/build`, copy embedded `rt`, generate `go.mod` from build info, run `go build`
+- [x] 1.6 `P0` Build pipeline: write `.rip/build`, copy embedded `rt`, generate `go.mod` from build info, run `go build`
   - `internal/build`
   - _Requirements: 13; design §4.1_
 - [ ] 1.7 `P0` Classic mode: labels and native `goto`, GOSUB/RETURN stack, ON…GOTO, duplicate-line replacement
@@ -35,7 +35,7 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
 - [ ] 1.8 `P0` Classic-style diagnostics with hints, e.g. `?SYNTAX ERROR IN x.bas:3 — expected THEN after IF condition`
   - `internal/compiler/diag`
   - _Requirements: 6.6_
-- [ ] 1.9 `P0` Golden test runner, and the first 30 golden programs
+- [x] 1.9 `P0` Golden test runner, and the first 30 golden programs
   - `internal/golden`, `testdata/golden`
 
 ## Phase 2 — Runtime (Sat 28 – Sun 29 Nov)
