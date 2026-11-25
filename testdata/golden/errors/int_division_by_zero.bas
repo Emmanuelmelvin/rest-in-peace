@@ -1,0 +1,4 @@
+PRINT "BEFORE"
+x = 0
+PRINT 7 \ x
+PRINT "AFTER"

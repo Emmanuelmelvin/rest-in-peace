@@ -12,12 +12,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go/parser"
+	"go/token"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"strconv"
 	"strings"
 
 	rip "github.com/Emmanuelmelvin/rest-in-peace"
@@ -29,16 +32,6 @@ const ModulePath = "ripapp"
 
 // GoVersion is the go directive written into generated go.mod files.
 const GoVersion = "1.24"
-
-// runtimeDeps are the third-party modules rt may import. Their versions are
-// copied from the CLI's own build info, so programs use exactly the versions
-// rip was built and tested with.
-var runtimeDeps = []string{
-	"github.com/jackc/pgx/v5",
-	"modernc.org/sqlite",
-	"github.com/shopspring/decimal",
-	"github.com/golang-jwt/jwt/v5",
-}
 
 // ErrNoGo is returned when the Go toolchain is not installed (Requirement 13.1).
 var ErrNoGo = errors.New("?GO NOT FOUND ERROR — rip needs the Go toolchain (1.24 or newer) to build programs; install it from https://go.dev/dl/ (on Windows: winget install GoLang.Go)")
@@ -92,16 +85,12 @@ func Build(ctx context.Context, dir string, opts Options) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	out, err := filepath.Abs(opts.Output)
+	if opts.Output == "" {
+		return "", errors.New("build: Options.Output is empty")
+	}
+	out, err := filepath.Abs(binaryPath(opts.Output, opts.OS))
 	if err != nil {
 		return "", err
-	}
-	targetOS := opts.OS
-	if targetOS == "" {
-		targetOS = runtime.GOOS
-	}
-	if targetOS == "windows" && !strings.HasSuffix(out, ".exe") {
-		out += ".exe"
 	}
 	if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
 		return "", err
@@ -130,6 +119,18 @@ func Build(ctx context.Context, dir string, opts Options) (string, error) {
 		return "", err
 	}
 	return out, nil
+}
+
+// binaryPath adds ".exe" to output when the target OS (goos, or this
+// machine's when empty) is Windows.
+func binaryPath(output, goos string) string {
+	if goos == "" {
+		goos = runtime.GOOS
+	}
+	if goos == "windows" && !strings.EqualFold(filepath.Ext(output), ".exe") {
+		return output + ".exe"
+	}
+	return output
 }
 
 func goCmd(ctx context.Context, dir string, env []string, goBin string, args ...string) error {
@@ -196,18 +197,67 @@ func goMod() []byte {
 	return b.Bytes()
 }
 
+// runtimeRequires returns the modules that the embedded rt imports, at the
+// versions in the CLI's own build info, so programs use exactly the versions
+// rip was built and tested with. A module is only in the build info if the CLI
+// links it, so each module rt imports must also be imported (blank) by a
+// package the CLI links; TestGoModPinsRuntimeImports fails until it is.
 func runtimeRequires() []*debug.Module {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		return nil
 	}
+	imports, err := runtimeImports()
+	if err != nil {
+		return nil
+	}
 	var out []*debug.Module
 	for _, d := range info.Deps {
-		for _, want := range runtimeDeps {
-			if d.Path == want {
+		for _, imp := range imports {
+			if imp == d.Path || strings.HasPrefix(imp, d.Path+"/") {
 				out = append(out, d)
+				break
 			}
 		}
 	}
 	return out
+}
+
+// runtimeImports returns the packages outside the standard library that the
+// embedded rt source imports.
+func runtimeImports() ([]string, error) {
+	entries, err := fs.ReadDir(rip.RuntimeFS, "rt")
+	if err != nil {
+		return nil, err
+	}
+	seen := map[string]bool{}
+	var out []string
+	fset := token.NewFileSet()
+	for _, e := range entries {
+		name := e.Name()
+		if !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		src, err := fs.ReadFile(rip.RuntimeFS, "rt/"+name)
+		if err != nil {
+			return nil, err
+		}
+		f, err := parser.ParseFile(fset, name, src, parser.ImportsOnly)
+		if err != nil {
+			return nil, err
+		}
+		for _, imp := range f.Imports {
+			p, err := strconv.Unquote(imp.Path.Value)
+			if err != nil {
+				return nil, err
+			}
+			// Standard-library paths have no dot in their first element.
+			first, _, _ := strings.Cut(p, "/")
+			if strings.Contains(first, ".") && !seen[p] {
+				seen[p] = true
+				out = append(out, p)
+			}
+		}
+	}
+	return out, nil
 }

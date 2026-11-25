@@ -1,0 +1,2 @@
+PRINT "A"
+PRINT Nope(1)

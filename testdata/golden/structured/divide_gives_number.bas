@@ -1,0 +1,3 @@
+PRINT 7 / 2
+PRINT 1 / 4
+PRINT 6 / 3

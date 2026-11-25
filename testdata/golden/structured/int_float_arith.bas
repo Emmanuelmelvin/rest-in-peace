@@ -1,0 +1,6 @@
+PRINT 7 + 2
+PRINT 7 - 2
+PRINT 7 * 2
+PRINT 2.5 + 0.5
+PRINT 1.5 * 4
+PRINT 7 - 0.5

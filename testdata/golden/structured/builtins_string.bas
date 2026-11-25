@@ -1,0 +1,8 @@
+PRINT LEN("abc")
+PRINT LEN("")
+PRINT UPPER("abc")
+PRINT LOWER("ABC")
+PRINT "[" & TRIM("  Hello, World  ") & "]"
+PRINT LEFT("HELLO", 2)
+PRINT RIGHT("HELLO", 3)
+PRINT MID("HELLO", 2, 3)

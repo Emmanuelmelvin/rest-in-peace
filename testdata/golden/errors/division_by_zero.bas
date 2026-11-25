@@ -1,0 +1,4 @@
+PRINT "BEFORE"
+x = 0
+PRINT 10 / x
+PRINT "AFTER"
