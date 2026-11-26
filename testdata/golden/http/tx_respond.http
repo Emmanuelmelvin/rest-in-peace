@@ -1,0 +1,30 @@
+RESPOND inside TRANSACTION commits the transaction and sends the response;
+THROW HTTPERROR inside TRANSACTION rolls back the transaction (Requirements 6.7, 9.5).
+
+### empty at start
+GET /notes
+=> 200
+
+[]
+
+### RESPOND inside TRANSACTION commits
+POST /notes
+
+{"text": "first", "amount": "12.50"}
+=> 201
+
+{"id": 1, "text": "first", "amount": "12.50"}
+
+### THROW HTTPERROR inside TRANSACTION rolls back
+POST /notes/fail
+
+{"text": "rolled back", "amount": "99.00"}
+=> 422
+
+{"error": "NOTE REJECTED"}
+
+### only the committed row is present
+GET /notes
+=> 200
+
+[{"id": 1, "text": "first", "amount": "12.50"}]
