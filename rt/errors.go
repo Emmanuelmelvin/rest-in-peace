@@ -62,34 +62,154 @@ func HTTPError(status int, message string, details Value) *Error {
 
 // NewError implements ERROR("message"), the value of THROW ERROR(…).
 // Called by generated code.
+//
+// Error values are ordinary maps of the same shape as the e that CATCH binds
+// (see Value), so e.message, PRINT and JSON work on them like on any other
+// value. THROW turns them back into an *Error.
 func NewError(message Value) Value {
-	// TODO(task 2.2)
-	panic(notBuilt("ERROR", "2.2"))
+	return (&Error{Kind: KindUser, Message: ToString(message)}).Value()
 }
 
 // NewHTTPError implements HTTPERROR(status, "message" [, details]).
 // Called by generated code.
 func NewHTTPError(status, message Value, details ...Value) Value {
-	// TODO(task 2.2)
-	panic(notBuilt("HTTPERROR", "2.2"))
+	n, ok := toInt(status)
+	if !ok || n < 100 || n > 599 {
+		panic(Errorf(KindTypeMismatch, `HTTPERROR needs a status code from 100 to 599, like HTTPERROR(404, "NOT FOUND"), got %s %s`, TypeName(status), ToString(status)))
+	}
+	var d Value
+	if len(details) > 0 {
+		d = details[0]
+	}
+	return HTTPError(int(n), ToString(message), d).Value()
+}
+
+// Value returns the error as the BASIC value that CATCH e binds
+// (Requirement 6.3): a map with message, kind, file and line, plus status
+// and details when the error has them. An unknown location is NIL.
+func (e *Error) Value() *Map {
+	m := MapOf("message", e.Message, "kind", string(e.Kind))
+	if e.File != "" {
+		m.Set("file", e.File)
+		m.Set("line", int64(e.Line))
+	} else {
+		m.Set("file", nil)
+		m.Set("line", nil)
+	}
+	if e.Status != 0 {
+		m.Set("status", int64(e.Status))
+	}
+	if e.Details != nil {
+		m.Set("details", e.Details)
+	}
+	return m
+}
+
+// Throw implements THROW v. v is an error value: one made by ERROR or
+// HTTPERROR, or the e of a CATCH, which rethrows it with its kind and its
+// original location. Anything else is a TYPE MISMATCH.
+func Throw(v Value) {
+	panic(errorFromValue(v))
+}
+
+// errorFromValue turns the value of THROW back into an *Error.
+func errorFromValue(v Value) *Error {
+	switch x := v.(type) {
+	case *Error:
+		return x
+	case *Map:
+		if kind, ok := mapGet(x, "kind").(string); ok && kind != "" {
+			e := &Error{Kind: Kind(kind), Message: ToString(mapGet(x, "message")), Details: mapGet(x, "details")}
+			if file, ok := mapGet(x, "file").(string); ok {
+				e.File = file
+				if n, ok := toInt(mapGet(x, "line")); ok {
+					e.Line = int(n)
+				}
+			}
+			if n, ok := toInt(mapGet(x, "status")); ok {
+				e.Status = int(n)
+			}
+			return e
+		}
+	}
+	return Errorf(KindTypeMismatch, `THROW needs an error, like THROW ERROR("message") or THROW HTTPERROR(404, "NOT FOUND"), got %s`, TypeName(v))
+}
+
+func mapGet(m *Map, key string) Value {
+	if m == nil {
+		return nil
+	}
+	v, _ := m.Get(key)
+	return v
+}
+
+// Recover is deferred by every generated TRY body (design §4.6):
+//
+//	defer rt.Recover(&e)
+//
+// It stops a BASIC error or Go panic and stores it in *e for CATCH, with the
+// BASIC file and line where it was raised. RESPOND, END and ETERNAL LOOP are
+// not errors that CATCH may stop, so they keep unwinding (Requirement 6.7)
+// and the FINALLY around the TRY still runs. It must be deferred directly,
+// so that recover works and the panicking frames are still on the stack.
+func Recover(e **Error) {
+	r := recover()
+	if r == nil {
+		return
+	}
+	switch x := r.(type) {
+	case *Respond, endSignal:
+		panic(r)
+	case *Error:
+		if x.Kind == KindEternalLoop {
+			panic(r)
+		}
+	}
+	err := FromPanic(r)
+	if err.File == "" {
+		err.File, err.Line = basLocation()
+	}
+	*e = err
 }
 
 // ErrorResponse maps an error that escaped a handler or middleware to the
 // HTTP response (Requirements 6.4 and 6.5). The HTTP server (app.go) calls it
 // for every *Error it recovers; c.Req is the current request.
 //
-// This minimal version lets the server work before task 2.2 finishes it.
-// TODO(task 2.2): omit "details" when there are none; log the full error
-// with the request ID; 508 for ETERNAL LOOP; never leak internals in production.
+//   - HTTPERROR: its status and {"error": message, "details": …}, without
+//     "details" when there are none.
+//   - ETERNAL LOOP (the playground loop guard): 508 and its message.
+//   - Anything else, including Go panics: 500 and only
+//     {"error": "INTERNAL ERROR", "requestId": …}. The full error goes to the
+//     log with the request ID, never to the client.
 func ErrorResponse(c *Ctx, e *Error) (status int, body Value) {
 	if e.Kind == KindHTTP && e.Status != 0 {
-		return e.Status, MapOf("error", e.Message, "details", e.Details)
+		m := MapOf("error", e.Message)
+		if e.Details != nil {
+			m.Set("details", e.Details)
+		}
+		return e.Status, m
+	}
+	logError(c, e)
+	if e.Kind == KindEternalLoop {
+		return 508, MapOf("error", e.Message)
 	}
 	id := ""
 	if c != nil && c.Req != nil {
 		id = c.Req.ID
 	}
 	return 500, MapOf("error", "INTERNAL ERROR", "requestId", id)
+}
+
+// logError logs an error that became a 5xx response. Log adds the request
+// ID. It is a variable so that tests can watch it.
+var logError = func(c *Ctx, e *Error) {
+	fields := MapOf("kind", string(e.Kind))
+	if e.File != "" {
+		fields.Set("file", e.File)
+		fields.Set("line", int64(e.Line))
+	}
+	Log(c, "ERROR", e.Error(), fields)
 }
 
 // Respond is the control-flow signal raised by RESPOND. It is not an error:
