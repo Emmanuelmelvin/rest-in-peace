@@ -1,0 +1,7 @@
+Hello World, structured mode (a copy of examples/hello.bas). Requirement 7.1, 7.5.
+
+### hello
+GET /hello
+=> 200
+
+{"message": "HELLO WORLD"}

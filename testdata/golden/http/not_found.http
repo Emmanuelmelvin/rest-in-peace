@@ -1,0 +1,27 @@
+Unmatched routes get 404 {"error": "ROUTE NOT FOUND IN THIS REALM"}
+(Requirement 7.8). Not pinned by the spec, so not tested: what a known path
+with the wrong method gets (404 or 405).
+
+### unknown path
+GET /nowhere
+=> 404
+
+{"error": "ROUTE NOT FOUND IN THIS REALM"}
+
+### unknown nested path, with a query
+GET /hello/there/ghost?x=1
+=> 404
+
+{"error": "ROUTE NOT FOUND IN THIS REALM"}
+
+### a route is not a prefix
+GET /hellooo
+=> 404
+
+{"error": "ROUTE NOT FOUND IN THIS REALM"}
+
+### the route itself still works
+GET /hello
+=> 200
+
+{"message": "HELLO WORLD"}

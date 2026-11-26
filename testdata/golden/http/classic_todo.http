@@ -1,0 +1,77 @@
+The classic TODO API (a copy of examples/classic-todo.bas): classic routes,
+BODY(), PARAM(), RESPOND ending a GOSUB, and globals kept between requests
+(Requirement 7.1, 7.3, 7.4, 7.10).
+
+### no todos yet
+GET /todos
+=> 200
+
+{}
+
+### a todo needs a title
+POST /todos
+
+{"done": true}
+=> 400
+
+{"error": "A TODO NEEDS A TITLE"}
+
+### no body is no title
+POST /todos
+=> 400
+
+{"error": "A TODO NEEDS A TITLE"}
+
+### create the first todo
+POST /todos
+
+{"title": "BURY THE HATCHET"}
+=> 201
+
+{"id": "1", "title": "BURY THE HATCHET", "done": false}
+
+### create the second todo
+POST /todos
+
+{"title": "FEED THE BATS"}
+=> 201
+
+{"id": "2", "title": "FEED THE BATS", "done": false}
+
+### finish the first
+PATCH /todos/1
+=> 200
+
+{"id": "1", "title": "BURY THE HATCHET", "done": true}
+
+### a missing todo is dead
+PATCH /todos/99
+=> 404
+
+{"error": "THAT TODO IS DEAD"}
+
+### list them, in the order they were created
+GET /todos
+=> 200
+
+{
+  "1": {"id": "1", "title": "BURY THE HATCHET", "done": true},
+  "2": {"id": "2", "title": "FEED THE BATS", "done": false}
+}
+
+### invalid JSON never reaches the GOSUB
+POST /todos
+
+{"title":
+=> 400
+
+{"error": "BODY IS NOT VALID JSON"}
+
+### nothing changed
+GET /todos
+=> 200
+
+{
+  "1": {"id": "1", "title": "BURY THE HATCHET", "done": true},
+  "2": {"id": "2", "title": "FEED THE BATS", "done": false}
+}

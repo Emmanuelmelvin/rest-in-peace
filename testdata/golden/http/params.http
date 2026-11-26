@@ -1,0 +1,25 @@
+Path parameters are strings, read from req.params (Requirement 7.1, 7.2).
+
+### one parameter
+GET /graves/13
+=> 200
+
+{"id": "13"}
+
+### another value
+GET /graves/vlad
+=> 200
+
+{"id": "vlad"}
+
+### two parameters
+GET /crypts/north/graves/7
+=> 200
+
+{"crypt": "north", "grave": "7"}
+
+### a parameter is one path segment
+GET /graves/13/extra
+=> 404
+
+{"error": "ROUTE NOT FOUND IN THIS REALM"}

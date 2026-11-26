@@ -1,0 +1,7 @@
+Hello World, classic mode (a copy of examples/hello-classic.bas). Requirement 7.1, 7.4.
+
+### hello
+GET /hello
+=> 200
+
+{"message": "HELLO WORLD"}

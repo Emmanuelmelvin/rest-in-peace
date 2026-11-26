@@ -1,0 +1,20 @@
+Query values are strings in req.query, and a missing one is NIL
+(Requirement 7.2, 3.8). req.path is the path without the query.
+
+### two values
+GET /search?q=ghost&limit=3
+=> 200
+
+{"q": "ghost", "limit": "3", "missing": null, "path": "/search"}
+
+### an escaped value
+GET /search?q=haunted%20house
+=> 200
+
+{"q": "haunted house", "limit": null, "missing": null, "path": "/search"}
+
+### no query
+GET /search
+=> 200
+
+{"q": null, "limit": null, "missing": null, "path": "/search"}

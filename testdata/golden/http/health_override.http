@@ -1,0 +1,8 @@
+An app that defines GET /_health gets its own response instead of the
+built-in one (Requirement 14.6, "unless the app defines its own").
+
+### the app's own health route
+GET /_health
+=> 200
+
+{"status": "UNDEAD", "graves": 3}

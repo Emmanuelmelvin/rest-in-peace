@@ -1,0 +1,13 @@
+Classic programs get GET /_health too (Requirement 14.6).
+
+### health
+GET /_health
+=> 200
+
+{"status": "ALIVE"}
+
+### the app's route still works
+GET /hello
+=> 200
+
+{"message": "HELLO WORLD"}

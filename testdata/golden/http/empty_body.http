@@ -1,0 +1,22 @@
+With no request body, req.body is an empty map, so reading a member of it
+gives NIL rather than a NIL ACCESS ERROR (Requirement 7.2, 3.8).
+
+### GET with no body
+GET /body
+=> 200
+
+{"body": {}, "name": null}
+
+### POST with no body
+POST /body
+=> 200
+
+{"body": {}, "name": null}
+
+### POST with a body, for contrast
+POST /body
+
+{"name": "Casper"}
+=> 200
+
+{"body": {"name": "Casper"}, "name": "Casper"}

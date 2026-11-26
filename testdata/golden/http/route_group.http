@@ -1,0 +1,19 @@
+ROUTE GROUP "/v1" prefixes the routes inside it (Requirement 7.7).
+
+### prefixed static route
+GET /v1/ping
+=> 200
+
+{"pong": true}
+
+### prefixed route with a path parameter
+GET /v1/ghosts/7
+=> 200
+
+{"id": "7"}
+
+### the unprefixed path is not registered
+GET /ping
+=> 404
+
+{"error": "ROUTE NOT FOUND IN THIS REALM"}

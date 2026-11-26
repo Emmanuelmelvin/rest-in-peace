@@ -1,0 +1,36 @@
+RESPOND sends a status, a value and optional headers, and ends the handler
+(Requirement 7.4).
+
+### status, value and headers
+POST /ghosts
+
+{"name": "Casper"}
+=> 201
+location: /ghosts/1
+x-ghost: boo
+
+{"id": "1", "name": "Casper"}
+
+### status and value
+GET /accepted
+=> 202
+
+{"queued": true}
+
+### RESPOND inside IF ends the handler
+PUT /early?stop=yes
+=> 409
+
+{"error": "STOPPED EARLY"}
+
+### the handler runs on when RESPOND is skipped
+PUT /early
+=> 200
+
+{"stopped": false}
+
+### code after RESPOND doesn't run
+PATCH /teapot
+=> 418
+
+{"error": "I AM A TEAPOT"}

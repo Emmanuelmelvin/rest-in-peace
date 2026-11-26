@@ -1,0 +1,20 @@
+RETURN v from a handler responds 200 with v as JSON, and maps keep insertion
+order (Requirement 7.5, 3.5).
+
+### a map, keys in the order they were set
+GET /map
+=> 200
+
+{"b": 2, "a": 1, "z": "last"}
+
+### an array
+POST /array
+=> 200
+
+[1, 2.5, "three", true, null]
+
+### a value built by another function
+DELETE /nested
+=> 200
+
+{"method": "DELETE", "list": [{"x": 1}, []]}

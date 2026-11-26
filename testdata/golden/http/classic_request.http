@@ -1,0 +1,27 @@
+In classic mode, PARAM(), QUERY(), HEADER() and BODY() read the current
+request (Requirement 7.3). Header names are lowercase, as in req.headers
+(Requirement 7.2), and BODY() is {} when there is no body, as req.body is.
+
+### all four helpers
+POST /graves/13?sort=oldest
+X-Token: boo
+
+{"name": "Vlad"}
+=> 200
+
+{"id": "13", "sort": "oldest", "token": "boo", "name": "Vlad"}
+
+### each request sees its own values
+POST /graves/7?sort=newest
+X-Token: eek
+
+{"name": "Casper"}
+=> 200
+
+{"id": "7", "sort": "newest", "token": "eek", "name": "Casper"}
+
+### BODY() with no body
+GET /graves/1
+=> 200
+
+{"id": "1", "body": {}}

@@ -1,0 +1,21 @@
+A trailing * matches the rest of the path (Requirement 7.1).
+Not pinned by the spec, so not tested: whether /files or /files/ match, and
+whether the matched rest is exposed in req.params.
+
+### one segment
+GET /files/readme.txt
+=> 200
+
+{"path": "/files/readme.txt"}
+
+### several segments
+GET /files/crypt/north/bones.json
+=> 200
+
+{"path": "/files/crypt/north/bones.json"}
+
+### a different prefix doesn't match
+GET /tombs/readme.txt
+=> 404
+
+{"error": "ROUTE NOT FOUND IN THIS REALM"}

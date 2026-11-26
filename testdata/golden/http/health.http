@@ -1,0 +1,14 @@
+GET /_health returns 200 {"status": "ALIVE"} when the app defines no
+/_health route of its own (Requirement 14.6).
+
+### health
+GET /_health
+=> 200
+
+{"status": "ALIVE"}
+
+### the app's route still works
+GET /hello
+=> 200
+
+{"message": "HELLO WORLD"}

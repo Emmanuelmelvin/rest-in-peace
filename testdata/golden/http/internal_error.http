@@ -1,0 +1,27 @@
+An error other than an HTTPERROR that escapes a handler responds 500
+{"error": "INTERNAL ERROR", "requestId": ...}, and the error itself is not
+sent to the client (Requirement 6.5).
+
+### THROW ERROR
+GET /flood
+=> 500
+
+{"error": "INTERNAL ERROR", "requestId": "<any string>"}
+
+### a runtime error: division by zero
+GET /divide
+=> 500
+
+{"error": "INTERNAL ERROR", "requestId": "<any string>"}
+
+### a runtime error: a member of NIL
+GET /nil
+=> 500
+
+{"error": "INTERNAL ERROR", "requestId": "<any string>"}
+
+### the server keeps serving
+GET /ok
+=> 200
+
+{"ok": true}
