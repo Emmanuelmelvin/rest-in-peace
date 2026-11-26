@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-  <!-- Tombstone -->
-  <path d="M2.5 15V6.5a5.5 5.5 0 0 1 11 0V15z" fill="#a074c4"/>
-  <!-- Carved "B" -->
-  <path d="M6.2 5.2v7.6M6.2 5.2h2.1a1.85 1.85 0 0 1 0 3.7H6.2M6.2 8.9h2.4a1.95 1.95 0 0 1 0 3.9H6.2" fill="none" stroke="#2b1d36" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M3 14.5V7.2a5 5 0 0 1 10 0v7.3l-1.7-1.2-1.6 1.2L8 13.3l-1.7 1.2-1.6-1.2z" fill="#8b7cf6"/>
+  <ellipse cx="6.2" cy="7.4" rx=".95" ry="1.25" fill="#16131f"/>
+  <ellipse cx="9.8" cy="7.4" rx=".95" ry="1.25" fill="#16131f"/>
 </svg>

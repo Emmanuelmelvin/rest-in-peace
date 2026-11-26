@@ -1,8 +1,8 @@
 {
   "name": "rip-basic",
   "displayName": "RIP BASIC",
-  "description": "Syntax highlighting, editing support and a file icon for RIP BASIC (.bas) files.",
-  "version": "0.1.0",
+  "description": "Syntax highlighting, editing support and file icons for RIP BASIC (.bas and .test.bas) files.",
+  "version": "0.2.0",
   "publisher": "rest-in-peace",
   "license": "MIT",
   "repository": {
@@ -37,6 +37,21 @@
           "light": "./icons/bas.svg",
           "dark": "./icons/bas.svg"
         }
+      },
+      {
+        "id": "ripbasic-test",
+        "aliases": [
+          "RIP BASIC Test",
+          "ripbasic-test"
+        ],
+        "extensions": [
+          ".test.bas"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/bas-test.svg",
+          "dark": "./icons/bas-test.svg"
+        }
       }
     ],
     "grammars": [
@@ -44,6 +59,11 @@
         "language": "ripbasic",
         "scopeName": "source.ripbasic",
         "path": "./syntaxes/ripbasic.tmLanguage.json"
+      },
+      {
+        "language": "ripbasic-test",
+        "scopeName": "source.ripbasic.test",
+        "path": "./syntaxes/ripbasic-test.tmLanguage.json"
       }
     ]
   }
