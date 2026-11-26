@@ -17,6 +17,7 @@ type Ctx struct {
 	deadline time.Time // zero = none; set in playground (--guard) builds
 	ticks    uint32
 	gosub    []int // classic mode: this request's GOSUB return stack
+	app      *App
 
 	// Req is the current request, or nil outside a request.
 	Req *Request
@@ -30,6 +31,15 @@ func NewCtx(parent context.Context) *Ctx {
 		parent = context.Background()
 	}
 	return &Ctx{ctx: parent, maxDepth: DefaultMaxDepth}
+}
+
+// App returns the HTTP app that ROUTE and SERVE build. Every request's Ctx
+// shares its program's app; a Ctx made with NewCtx gets a new one on first use.
+func (c *Ctx) App() *App {
+	if c.app == nil {
+		c.app = NewApp("")
+	}
+	return c.app
 }
 
 // Context returns the Go context, which Go interop passes to context.Context parameters.
