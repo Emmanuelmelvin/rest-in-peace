@@ -54,7 +54,7 @@ func (g *gen) collectFuncs() {
 		}
 		fn := &fnInfo{decl: d, name: name, goName: g.mangle(name), isSub: d.IsSub, locals: map[string]*varInfo{}}
 		if !d.IsSub {
-			fn.result, _ = g.typeRef(d.At, d.Result)
+			fn.result, fn.resultDecl = g.typeRef(d.At, d.Result)
 		}
 		for _, p := range d.Params {
 			pn := canon(p.Name)
@@ -272,7 +272,7 @@ func (g *gen) emitFunc(o *out, fn *fnInfo) {
 	}
 	g.block(o, d.Body, &scope{fn: fn})
 	if !fn.isSub {
-		o.w("return ", fn.result.zero())
+		o.w("return ", zeroForDecl(fn.result, fn.resultDecl))
 	}
 	o.w("}")
 	o.w("")
@@ -326,7 +326,7 @@ func (g *gen) stmt(o *out, s ast.Stmt, sc *scope) {
 		body.w("for _, rip_it", id, " := range rt.Iter(", x.code, ") {")
 		g.guard(&body)
 		g.dir(&body, s.At)
-		body.w(v.goName, " = ", coerce(gexpr{"rip_it" + id, tAny, false}, v.t))
+		body.w(v.goName, " = ", coerceDecl(gexpr{"rip_it" + id, tAny, false}, v.t, v.decl))
 		g.loopBody(&body, s.Body, sc, lp)
 		body.w("}")
 		g.emitLabeled(o, s.At, lp, &body)
@@ -453,7 +453,7 @@ func (g *gen) loopVar(name string, p token.Pos, sc *scope, numeric bool) *varInf
 	if v.konst {
 		g.errorf(p, diag.Syntax, "%s is a CONST, so it cannot be a loop variable", name)
 	}
-	if numeric && (v.t == tStr || v.t == tBool) {
+	if numeric && (v.t == tStr || v.t == tBool || v.decl == "MAP" || v.decl == "ARRAY" || v.decl == "DATE" || v.decl == "NIL") {
 		g.errorf(p, diag.TypeMismatch, "the FOR variable %s is declared AS %s; it must be a NUMBER or INTEGER", name, v.decl)
 	}
 	return v
@@ -503,9 +503,9 @@ func (g *gen) returnStmt(o *out, s *ast.ReturnStmt, sc *scope) {
 	case fn.isSub:
 		o.w("return")
 	case s.Value == nil:
-		o.w("return ", fn.result.zero())
+		o.w("return ", zeroForDecl(fn.result, fn.resultDecl))
 	default:
-		o.w("return ", coerce(g.expr(s.Value, sc), fn.result))
+		o.w("return ", coerceDecl(g.expr(s.Value, sc), fn.result, fn.resultDecl))
 	}
 }
 
@@ -528,7 +528,7 @@ func (g *gen) simpleStmt(o *out, s ast.Stmt, sc *scope) bool {
 		}
 		g.dir(o, s.At)
 		if s.Value != nil {
-			o.w(v.goName, " = ", coerce(g.expr(s.Value, sc), v.t))
+			o.w(v.goName, " = ", coerceDecl(g.expr(s.Value, sc), v.t, v.decl))
 		} else {
 			o.w(v.goName, " = ", zeroFor(v))
 		}
@@ -583,7 +583,7 @@ func (g *gen) assign(o *out, p token.Pos, target, value ast.Expr, sc *scope) {
 			g.errorf(p, diag.Syntax, "%s is a CONST, so it cannot change", t.Name)
 			return
 		}
-		o.w(v.goName, " = ", coerce(g.expr(value, sc), v.t))
+		o.w(v.goName, " = ", coerceDecl(g.expr(value, sc), v.t, v.decl))
 	case *ast.MemberExpr:
 		x := g.expr(t.X, sc)
 		val := g.expr(value, sc)

@@ -141,6 +141,7 @@ type fnInfo struct {
 	goName     string
 	params     []*varInfo
 	result     typ
+	resultDecl string
 	isSub      bool
 	locals     map[string]*varInfo
 	localOrder []*varInfo
@@ -401,11 +402,15 @@ func (g *gen) typeRef(p token.Pos, ref ast.TypeRef) (typ, string) {
 
 // zeroFor is the value of a DIM without "= value".
 func zeroFor(v *varInfo) string {
-	switch v.decl {
+	return zeroForDecl(v.t, v.decl)
+}
+
+func zeroForDecl(t typ, decl string) string {
+	switch decl {
 	case "MAP":
 		return "rt.NewMap()"
 	case "ARRAY":
 		return "rt.ArrayOf()"
 	}
-	return v.t.zero()
+	return t.zero()
 }

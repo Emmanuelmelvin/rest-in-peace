@@ -92,7 +92,7 @@ func (g *gen) tryStmt(o *out, s *ast.TryStmt, sc *scope) {
 		case catchVar.konst:
 			g.errorf(s.At, diag.Syntax, "%s is a CONST, so CATCH cannot store the error in it; pick another name", s.CatchVar)
 			catchVar = nil
-		case catchVar.t != tAny:
+		case catchVar.t != tAny || (catchVar.decl != "" && catchVar.decl != "ANY" && catchVar.decl != "MAP"):
 			g.errorf(s.At, diag.TypeMismatch, "CATCH %s stores the error as a MAP, but %s is declared AS %s; pick another name", s.CatchVar, s.CatchVar, catchVar.decl)
 			catchVar = nil
 		}

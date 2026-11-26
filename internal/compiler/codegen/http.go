@@ -184,10 +184,12 @@ func (g *gen) handlerRef(s *ast.RouteStmt, fullPath string) string {
 }
 
 func (g *gen) wrapHandler(fn *fnInfo) string {
-	if !fn.isSub && fn.params[0].t == tAny && fn.result == tAny {
+	p := fn.params[0]
+	untypedParam := p.t == tAny && (p.decl == "" || p.decl == "ANY")
+	if !fn.isSub && untypedParam && fn.result == tAny {
 		return fn.goName // already a func(c *rt.Ctx, req rt.Value) rt.Value
 	}
-	call := fn.goName + "(c, " + coerce(gexpr{"req", tAny, false}, fn.params[0].t) + ")"
+	call := fn.goName + "(c, " + coerceDecl(gexpr{"req", tAny, false}, p.t, p.decl) + ")"
 	if fn.isSub {
 		return "func(c *rt.Ctx, req rt.Value) rt.Value { " + call + "; return nil }"
 	}

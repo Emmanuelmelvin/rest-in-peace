@@ -1,6 +1,9 @@
 package rt
 
-import "math"
+import (
+	"math"
+	"time"
+)
 
 // Conversions and control-flow helpers that generated code calls.
 
@@ -55,6 +58,38 @@ func AsMap(v Value) *Map {
 		return m
 	}
 	panic(Errorf(KindTypeMismatch, `expected a MAP like {"key": value}, got %s`, TypeName(v)))
+}
+
+// CheckMap enforces an AS MAP declaration at runtime (task 2.8, Requirement 3.2).
+func CheckMap(v Value) Value {
+	if m, ok := v.(*Map); ok && m != nil {
+		return m
+	}
+	panic(Errorf(KindTypeMismatch, `expected a MAP like {"key": value}, got %s`, TypeName(v)))
+}
+
+// CheckArray enforces an AS ARRAY declaration at runtime (task 2.8, Requirement 3.2).
+func CheckArray(v Value) Value {
+	if a, ok := v.(*Array); ok && a != nil {
+		return a
+	}
+	panic(Errorf(KindTypeMismatch, "expected an ARRAY like [1, 2], got %s", TypeName(v)))
+}
+
+// CheckDate enforces an AS DATE declaration at runtime (task 2.8, Requirement 3.2).
+func CheckDate(v Value) Value {
+	if d, ok := v.(time.Time); ok {
+		return d
+	}
+	panic(Errorf(KindTypeMismatch, "expected a DATE, got %s", TypeName(v)))
+}
+
+// CheckNil enforces an AS NIL declaration at runtime (task 2.8, Requirement 3.2).
+func CheckNil(v Value) Value {
+	if v == nil {
+		return nil
+	}
+	panic(Errorf(KindTypeMismatch, "expected NIL, got %s", TypeName(v)))
 }
 
 // ForCond reports whether a dynamic FOR loop should run another time: v <= to

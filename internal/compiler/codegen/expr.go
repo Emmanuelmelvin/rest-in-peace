@@ -248,7 +248,7 @@ func (g *gen) callUser(e *ast.CallExpr, fn *fnInfo, sc *scope, asStmt bool) gexp
 			g.errorf(e.At, diag.Syntax, "%s needs a value for %s (argument %d)", fn.decl.Name, fn.decl.Params[i].Name, i+1)
 			return bad
 		}
-		args = append(args, coerce(a, p.t))
+		args = append(args, coerceDecl(a, p.t, p.decl))
 	}
 	return gexpr{fn.goName + "(" + strings.Join(args, ", ") + ")", fn.result, false}
 }
@@ -387,6 +387,26 @@ func truthy(x gexpr) string {
 		return x.code
 	}
 	return "rt.Truthy(" + x.code + ")"
+}
+
+// coerceDecl converts x for a destination with Go type want and declared
+// BASIC type decl, enforcing runtime type checks on dynamic boundaries such
+// as AS MAP, AS ARRAY, AS DATE and AS NIL (task 2.8, Requirement 3.2).
+func coerceDecl(x gexpr, want typ, decl string) string {
+	if want != tAny {
+		return coerce(x, want)
+	}
+	switch decl {
+	case "MAP":
+		return "rt.CheckMap(" + x.code + ")"
+	case "ARRAY":
+		return "rt.CheckArray(" + x.code + ")"
+	case "DATE":
+		return "rt.CheckDate(" + x.code + ")"
+	case "NIL":
+		return "rt.CheckNil(" + x.code + ")"
+	}
+	return x.code
 }
 
 // coerce converts x for a destination of type want. Converting a dynamic
