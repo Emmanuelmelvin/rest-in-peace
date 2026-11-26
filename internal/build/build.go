@@ -31,7 +31,7 @@ import (
 const ModulePath = "ripapp"
 
 // GoVersion is the go directive written into generated go.mod files.
-const GoVersion = "1.24"
+const GoVersion = "1.26.0"
 
 // ErrNoGo is returned when the Go toolchain is not installed (Requirement 13.1).
 var ErrNoGo = errors.New("?GO NOT FOUND ERROR — rip needs the Go toolchain (1.24 or newer) to build programs; install it from https://go.dev/dl/ (on Windows: winget install GoLang.Go)")
@@ -68,7 +68,7 @@ func Prepare(dir string, files []codegen.File) error {
 	if err := writeRuntime(rtDir); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filepath.Join(dir, "go.mod"), goMod(), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "go.mod"), goModFor(files), 0o644); err != nil {
 		return err
 	}
 	for _, f := range files {
@@ -184,16 +184,30 @@ func removeGoFiles(dir string) error {
 }
 
 func goMod() []byte {
+	return goModFor(nil)
+}
+
+func goModFor(files []codegen.File) []byte {
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "module %s\n\ngo %s\n", ModulePath, GoVersion)
-	if reqs := runtimeRequires(); len(reqs) > 0 {
+	reqs := append([]*debug.Module{}, runtimeRequires()...)
+	seen := map[string]bool{}
+	for _, r := range reqs {
+		seen[r.Path] = true
+	}
+	for _, r := range extraGoModRequires(files) {
+		if !seen[r.Path] {
+			seen[r.Path] = true
+			reqs = append(reqs, r)
+		}
+	}
+	if len(reqs) > 0 {
 		b.WriteString("\nrequire (\n")
 		for _, r := range reqs {
 			fmt.Fprintf(&b, "\t%s %s\n", r.Path, r.Version)
 		}
 		b.WriteString(")\n")
 	}
-	// TODO(task 3.5): add the Go packages named in IMPORT … FROM GO.
 	return b.Bytes()
 }
 

@@ -180,6 +180,10 @@ func (g *gen) classicScan(stmts []ast.Stmt) {
 			g.classicScan(s.Body)
 			g.classicScan(s.Catch)
 			g.classicScan(s.Finally)
+		case *ast.DBConnectStmt:
+			ident(s.URL)
+		case *ast.TransactionStmt:
+			g.classicScan(s.Body)
 		}
 	}
 }

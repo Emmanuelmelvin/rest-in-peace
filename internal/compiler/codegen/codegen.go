@@ -62,7 +62,7 @@ func Generate(p *ast.Program, opts Options) ([]File, diag.List) {
 		seen  = map[string]string{}
 	)
 	for _, f := range p.Files {
-		g := newGen(f, opts)
+		g := newGen(p, f, opts)
 		if other, dup := seen[g.mod]; dup {
 			ds = append(ds, diag.Errorf(token.Pos{File: f.Name, Line: 1, Col: 1}, diag.Syntax,
 				"%s and %s would both become module %q; rename one of them", other, f.Name, g.mod))
@@ -108,6 +108,7 @@ func mainFile(runs []string) (File, error) {
 
 // gen generates one .bas file.
 type gen struct {
+	prog  *ast.Program
 	file  *ast.File
 	opts  Options
 	mod   string // mangled module name
@@ -118,9 +119,11 @@ type gen struct {
 	globals   map[string]*varInfo
 	globOrder []*varInfo
 
-	tmp int       // counter for rip_ temporaries and labels
-	cur token.Pos // the statement being compiled, for diagnostics
-	cl  *classicState
+	tmp    int       // counter for rip_ temporaries and labels
+	cur    token.Pos // the statement being compiled, for diagnostics
+	cl     *classicState
+	mods   *basImportState
+	goImps *goImportState
 }
 
 // varInfo is a variable, parameter or constant.
@@ -161,13 +164,16 @@ type loop struct {
 	used  bool
 }
 
-func newGen(f *ast.File, opts Options) *gen {
+func newGen(p *ast.Program, f *ast.File, opts Options) *gen {
 	return &gen{
+		prog:    p,
 		file:    f,
 		opts:    opts,
 		mod:     moduleName(f.Name),
 		funcs:   map[string]*fnInfo{},
 		globals: map[string]*varInfo{},
+		mods:    &basImportState{},
+		goImps:  &goImportState{},
 	}
 }
 
@@ -177,9 +183,9 @@ func (g *gen) runName() string { return "rip_" + g.mod + "_run" }
 func (g *gen) generate() []byte {
 	for _, im := range g.file.Imports {
 		if im.FromGo {
-			g.todo(im.At, "3.5", "IMPORT … FROM GO")
+			g.goImport(im)
 		} else {
-			g.todo(im.At, "3.4", "IMPORT")
+			g.basImport(im)
 		}
 	}
 	var body out
@@ -193,7 +199,17 @@ func (g *gen) generate() []byte {
 	o.w("")
 	o.w("package main")
 	o.w("")
-	o.w("import ", strconv.Quote(RuntimeImport))
+	extraImps := g.extraGoImports()
+	if len(extraImps) == 0 {
+		o.w("import ", strconv.Quote(RuntimeImport))
+	} else {
+		o.w("import (")
+		o.w(strconv.Quote(RuntimeImport))
+		for _, imp := range extraImps {
+			o.w(imp)
+		}
+		o.w(")")
+	}
 	o.w("")
 	o.raw(body.String())
 	src := []byte(o.String())
