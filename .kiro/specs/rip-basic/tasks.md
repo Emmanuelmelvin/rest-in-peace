@@ -58,7 +58,7 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
   - _Requirements: 7.10_
 - [ ] 2.7 `P1` ROUTE GROUP (done); RATELIMIT, BEARERJWT · **[Kiro: `rt/middleware.go`]**
   - _Requirements: 7.7, 8.3_
-- [ ] 2.8 `P1` Runtime type checks for `AS <TYPE>` on dynamic boundaries
+- [x] 2.8 `P1` Runtime type checks for `AS <TYPE>` on dynamic boundaries
   - _Requirements: 3.2_
 - [x] 2.9 `P1` Graceful shutdown, `/_health`
   - _Requirements: 14.5, 14.6_
