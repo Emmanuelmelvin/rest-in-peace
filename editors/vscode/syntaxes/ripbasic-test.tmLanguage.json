@@ -1,0 +1,8 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "RIP BASIC Test",
+  "scopeName": "source.ripbasic.test",
+  "patterns": [
+    { "include": "source.ripbasic" }
+  ]
+}
