@@ -43,10 +43,10 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
 
 ## Phase 2 — Runtime (Sat 28 – Sun 29 Nov)
 
-- [ ] 2.1 `P0` HTTP server: ROUTE/CALL/GOSUB, `:params` and `*`, `req`, RESPOND, RETURN-as-response, 404 realm message, body cap, invalid-JSON 400
+- [x] 2.1 `P0` HTTP server: ROUTE/CALL/GOSUB, `:params` and `*`, `req`, RESPOND, RETURN-as-response, 404 realm message, body cap, invalid-JSON 400
   - `rt/app.go`, `rt/request.go`
   - _Requirements: 7.1–7.6, 7.8, 7.9_
-- [ ] 2.2 `P0` TRY/CATCH/FINALLY, THROW, HTTPERROR, the RESPOND signal, panic-to-response mapping with request IDs
+- [x] 2.2 `P0` TRY/CATCH/FINALLY, THROW, HTTPERROR, the RESPOND signal, panic-to-response mapping with request IDs
   - _Requirements: 6.1–6.7_
 - [ ] 2.3 `P0` USE middleware with path scoping; APIKEY, CORS, REQUESTLOG
   - _Requirements: 8.1–8.3_
@@ -54,13 +54,13 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
   - _Requirements: 10.1–10.5_
 - [ ] 2.5 `P0` DECIMAL (shopspring/decimal): arithmetic, comparisons, ROUND, JSON · **[Kiro]**
   - _Requirements: 3.7_
-- [ ] 2.6 `P0` Classic per-request GOSUB stack and per-program mutex
+- [x] 2.6 `P0` Classic per-request GOSUB stack and per-program mutex
   - _Requirements: 7.10_
 - [ ] 2.7 `P1` ROUTE GROUP, RATELIMIT, BEARERJWT
   - _Requirements: 7.7, 8.3_
 - [ ] 2.8 `P1` Runtime type checks for `AS <TYPE>` on dynamic boundaries
   - _Requirements: 3.2_
-- [ ] 2.9 `P1` Graceful shutdown, `/_health`
+- [x] 2.9 `P1` Graceful shutdown, `/_health`
   - _Requirements: 14.5, 14.6_
 
 ## Phase 3 — Data & modules (Mon 30 Nov – Tue 1 Dec)
