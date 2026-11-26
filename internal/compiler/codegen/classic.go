@@ -151,6 +151,26 @@ func (g *gen) classicScan(stmts []ast.Stmt) {
 			for _, n := range s.Lines {
 				target(s.At, n)
 			}
+		case *ast.LogStmt:
+			ident(s.Level)
+			ident(s.Msg)
+			ident(s.Fields)
+		case *ast.RouteStmt:
+			if s.GosubLine != 0 {
+				target(s.At, s.GosubLine)
+			}
+		case *ast.RespondStmt:
+			ident(s.Status)
+			ident(s.Value)
+			ident(s.Headers)
+		case *ast.ServeStmt:
+			ident(s.Port)
+		case *ast.ThrowStmt:
+			ident(s.Value)
+		case *ast.TryStmt:
+			g.classicScan(s.Body)
+			g.classicScan(s.Catch)
+			g.classicScan(s.Finally)
 		}
 	}
 }
@@ -238,7 +258,7 @@ func (g *gen) ifNot(o *out, cond string, l string) {
 }
 
 func (g *gen) cstmt(o *out, s ast.Stmt, sc *scope) {
-	if g.simpleStmt(o, s, sc) || g.laterStmt(s) {
+	if g.simpleStmt(o, s, sc) || g.laterStmt(o, s, sc) {
 		return
 	}
 	if d, ok := s.(*ast.FuncDecl); ok {

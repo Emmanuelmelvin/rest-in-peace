@@ -25,3 +25,30 @@ func (r *Request) Value() *Map {
 		"id", r.ID,
 	)
 }
+
+// Classic-mode request helpers (Requirement 7.3). Generated code passes the
+// request's Ctx; outside a request they raise an error.
+
+// Param implements PARAM("name"): a :name path parameter.
+func Param(c *Ctx, name Value) Value {
+	// TODO(task 2.1)
+	panic(notBuilt("PARAM", "2.1"))
+}
+
+// Query implements QUERY("name"): a query-string value.
+func Query(c *Ctx, name Value) Value {
+	// TODO(task 2.1)
+	panic(notBuilt("QUERY", "2.1"))
+}
+
+// Header implements HEADER("name"): a request header, matched case-insensitively.
+func Header(c *Ctx, name Value) Value {
+	// TODO(task 2.1)
+	panic(notBuilt("HEADER", "2.1"))
+}
+
+// Body implements BODY(): the parsed JSON body, {} when there is none.
+func Body(c *Ctx) Value {
+	// TODO(task 2.1)
+	panic(notBuilt("BODY", "2.1"))
+}

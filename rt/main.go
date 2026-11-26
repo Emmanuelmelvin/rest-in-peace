@@ -43,32 +43,6 @@ func runTop(c *Ctx, run func(c *Ctx)) (err *Error) {
 	return nil
 }
 
-// FromPanic turns a recovered panic value into an *Error. Go runtime panics
-// get the closest BASIC kind (design §4.6).
-func FromPanic(r any) *Error {
-	switch x := r.(type) {
-	case *Error:
-		return x
-	case *Respond:
-		return Errorf(KindInternal, "RESPOND only works inside a ROUTE handler")
-	case runtime.Error:
-		msg := x.Error()
-		switch {
-		case strings.Contains(msg, "divide by zero"):
-			return &Error{Kind: KindDivisionByZero, Message: "the right side of a division is zero", Cause: x}
-		case strings.Contains(msg, "index out of range"):
-			return &Error{Kind: KindBadSubscript, Message: "an index is outside the array — arrays start at 0", Cause: x}
-		case strings.Contains(msg, "nil map"), strings.Contains(msg, "nil pointer"):
-			return &Error{Kind: KindNilAccess, Message: "a value is NIL — check it exists before using it", Cause: x}
-		}
-		return &Error{Kind: KindInternal, Message: msg, Cause: x}
-	case error:
-		return &Error{Kind: KindInternal, Message: x.Error(), Cause: x}
-	default:
-		return Errorf(KindInternal, "%v", r)
-	}
-}
-
 // buildRoot is the build directory (or module path, under -trimpath) that
 // the compiler resolved relative //line file names against. It is found
 // from this file's own path: <root>/rt/main.go.

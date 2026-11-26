@@ -1,6 +1,10 @@
 package rt
 
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+	"strings"
+)
 
 // Kind is the classic error word: ?<KIND> ERROR IN file:line — hint.
 type Kind string
@@ -56,6 +60,38 @@ func HTTPError(status int, message string, details Value) *Error {
 	return &Error{Kind: KindHTTP, Status: status, Message: message, Details: details}
 }
 
+// NewError implements ERROR("message"), the value of THROW ERROR(…).
+// Called by generated code.
+func NewError(message Value) Value {
+	// TODO(task 2.2)
+	panic(notBuilt("ERROR", "2.2"))
+}
+
+// NewHTTPError implements HTTPERROR(status, "message" [, details]).
+// Called by generated code.
+func NewHTTPError(status, message Value, details ...Value) Value {
+	// TODO(task 2.2)
+	panic(notBuilt("HTTPERROR", "2.2"))
+}
+
+// ErrorResponse maps an error that escaped a handler or middleware to the
+// HTTP response (Requirements 6.4 and 6.5). The HTTP server (app.go) calls it
+// for every *Error it recovers; c.Req is the current request.
+//
+// This minimal version lets the server work before task 2.2 finishes it.
+// TODO(task 2.2): omit "details" when there are none; log the full error
+// with the request ID; 508 for ETERNAL LOOP; never leak internals in production.
+func ErrorResponse(c *Ctx, e *Error) (status int, body Value) {
+	if e.Kind == KindHTTP && e.Status != 0 {
+		return e.Status, MapOf("error", e.Message, "details", e.Details)
+	}
+	id := ""
+	if c != nil && c.Req != nil {
+		id = c.Req.ID
+	}
+	return 500, MapOf("error", "INTERNAL ERROR", "requestId", id)
+}
+
 // Respond is the control-flow signal raised by RESPOND. It is not an error:
 // CATCH re-panics it, FINALLY still runs, and TRANSACTION commits
 // (Requirement 6.7).
@@ -72,6 +108,32 @@ func RespondNow(c *Ctx, status int, body Value, headers ...*Map) {
 		r.Headers = headers[0]
 	}
 	panic(r)
+}
+
+// FromPanic turns a recovered panic value into an *Error. Go runtime panics
+// get the closest BASIC kind (design §4.6).
+func FromPanic(r any) *Error {
+	switch x := r.(type) {
+	case *Error:
+		return x
+	case *Respond:
+		return Errorf(KindInternal, "RESPOND only works inside a ROUTE handler")
+	case runtime.Error:
+		msg := x.Error()
+		switch {
+		case strings.Contains(msg, "divide by zero"):
+			return &Error{Kind: KindDivisionByZero, Message: "the right side of a division is zero", Cause: x}
+		case strings.Contains(msg, "index out of range"):
+			return &Error{Kind: KindBadSubscript, Message: "an index is outside the array — arrays start at 0", Cause: x}
+		case strings.Contains(msg, "nil map"), strings.Contains(msg, "nil pointer"):
+			return &Error{Kind: KindNilAccess, Message: "a value is NIL — check it exists before using it", Cause: x}
+		}
+		return &Error{Kind: KindInternal, Message: msg, Cause: x}
+	case error:
+		return &Error{Kind: KindInternal, Message: x.Error(), Cause: x}
+	default:
+		return Errorf(KindInternal, "%v", r)
+	}
 }
 
 // notBuilt marks runtime features that are still stubs.
