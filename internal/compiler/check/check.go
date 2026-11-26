@@ -145,6 +145,7 @@ type checker struct {
 	lineSet  map[int]bool
 	hasWild  bool
 	classic  bool
+	routes   map[string]token.Pos // METHOD + path shape → first ROUTE, for duplicates
 }
 
 func (c *checker) errorf(pos token.Pos, kind diag.Kind, format string, args ...any) {
@@ -517,15 +518,7 @@ func (c *checker) checkStmt(s ast.Stmt) {
 		}
 
 	case *ast.RouteStmt:
-		if st.GosubLine != 0 {
-			if !c.classic {
-				c.errorf(st.At, diag.Syntax, "ROUTE … GOSUB is only allowed in classic mode; in structured mode use ROUTE %s %q CALL FunctionName", st.Method, st.Path)
-			} else {
-				c.checkLineTarget(st.At, st.GosubLine)
-			}
-		} else if st.Handler != "" {
-			c.checkHandlerRef(st.At, st.Handler)
-		}
+		c.checkRoute(st)
 
 	case *ast.GroupStmt:
 		for _, r := range st.Routes {
@@ -543,9 +536,7 @@ func (c *checker) checkStmt(s ast.Stmt) {
 		}
 
 	case *ast.ServeStmt:
-		if st.Port != nil {
-			c.checkExpr(st.Port)
-		}
+		c.checkServe(st)
 
 	case *ast.DBConnectStmt:
 		c.checkExpr(st.URL)

@@ -17,11 +17,16 @@ import (
 // ?KIND ERROR IN file:line — message, and the program exits with status 1.
 func Main(run func(c *Ctx)) {
 	c := NewCtx(context.Background())
+	app := c.App()
 	if e := runTop(c, run); e != nil {
 		fmt.Fprintln(os.Stderr, e.Error())
 		os.Exit(1)
 	}
-	// TODO(task 2.1): start the app if the program called SERVE.
+	// SERVE only recorded the port; listen now that all top-level code has run.
+	if err := app.Run(); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
 }
 
 func runTop(c *Ctx, run func(c *Ctx)) (err *Error) {

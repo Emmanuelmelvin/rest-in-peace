@@ -1,6 +1,7 @@
 package codegen
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 
@@ -28,7 +29,8 @@ type classicState struct {
 	targets   map[int]bool // line numbers that something jumps to
 	hasReturn bool
 	gosubIDs  []int
-	temps     []string // declarations of rip_t temporaries
+	routes    map[int]bool // ROUTE … GOSUB lines: entries of the classic function
+	temps     []string     // declarations of rip_t temporaries
 	used      map[string]bool
 }
 
@@ -38,7 +40,7 @@ const returnMarker = "\x00RETURN\x00"
 func (g *gen) classicName() string { return "rip_" + g.mod + "_classic" }
 
 func (g *gen) classicFile(o *out) {
-	g.cl = &classicState{lines: map[int]bool{}, targets: map[int]bool{}, used: map[string]bool{}}
+	g.cl = &classicState{lines: map[int]bool{}, targets: map[int]bool{}, routes: map[int]bool{}, used: map[string]bool{}}
 	top := &scope{}
 	for _, l := range g.file.Lines {
 		g.cl.lines[l.Number] = true
@@ -65,13 +67,14 @@ func (g *gen) classicFile(o *out) {
 	o.w(g.classicName(), "(c, 0)")
 	o.w("}")
 	o.w("")
-	o.w("// ", g.classicName(), " runs the program from its first line (entry 0).")
-	o.w("// TODO(task 2.1): other entries are ROUTE … GOSUB targets.")
+	o.w("// ", g.classicName(), " runs the program from its first line (entry 0),")
+	o.w("// or answers a request from a ROUTE … GOSUB line (entry = that line).")
 	o.w("func ", g.classicName(), "(c *rt.Ctx, entry int) {")
 	o.w("defer c.Enter()()")
 	for _, t := range g.cl.temps {
 		o.w(t)
 	}
+	g.entrySwitch(o)
 	o.raw(strings.ReplaceAll(body.String(), returnMarker, g.returnSwitch()))
 	o.w("}")
 }
@@ -209,12 +212,42 @@ func walkIdents(e ast.Expr, f func(*ast.Ident)) {
 	}
 }
 
+// routeReturnID is the GOSUB return ID a request starts with, so that a
+// RETURN in a ROUTE … GOSUB handler ends the request (design §4.7).
+const routeReturnID = "0"
+
+// entrySwitch jumps to a ROUTE … GOSUB line when a request runs the classic
+// function. The request's Ctx has its own, empty GOSUB stack.
+func (g *gen) entrySwitch(o *out) {
+	if len(g.cl.routes) == 0 {
+		return
+	}
+	lines := make([]int, 0, len(g.cl.routes))
+	for n := range g.cl.routes {
+		lines = append(lines, n)
+	}
+	sort.Ints(lines)
+	o.w("switch entry {")
+	for _, n := range lines {
+		o.w("case ", strconv.Itoa(n), ":")
+		if g.cl.hasReturn {
+			o.w("c.GosubPush(", routeReturnID, ")")
+		}
+		o.w("goto ", lineLabel(n))
+	}
+	o.w("}")
+}
+
 func (g *gen) returnSwitch() string {
-	if len(g.cl.gosubIDs) == 0 {
+	if len(g.cl.gosubIDs) == 0 && len(g.cl.routes) == 0 {
 		return "c.GosubPop()" // no GOSUB anywhere: always RETURN WITHOUT GOSUB
 	}
 	var o out
 	o.w("switch c.GosubPop() {")
+	if len(g.cl.routes) > 0 {
+		o.w("case ", routeReturnID, ":")
+		o.w("return")
+	}
 	for _, id := range g.cl.gosubIDs {
 		o.w("case ", strconv.Itoa(id), ":")
 		o.w("goto rip_g", strconv.Itoa(id))

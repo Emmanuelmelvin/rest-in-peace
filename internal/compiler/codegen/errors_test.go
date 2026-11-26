@@ -196,9 +196,9 @@ func TestDiagnostics(t *testing.T) {
 		want string // substring of the message
 		line int
 	}{
-		{"ROUTE", structured("d.bas", &ast.RouteStmt{At: at(3), Method: "GET", Path: "/", Handler: "H"}), diag.NotImplemented, "task 2.1", 3},
-		{"SERVE", structured("d.bas", &ast.ServeStmt{At: at(1)}), diag.NotImplemented, "SERVE is not built yet (task 2.1", 1},
-		{"RESPOND", structured("d.bas", &ast.RespondStmt{At: at(1), Status: num(200), Value: str1}), diag.NotImplemented, "task 2.1", 1},
+		{"ROUTE", structured("d.bas", &ast.RouteStmt{At: at(3), Method: "GET", Path: "/", Handler: "H"}), diag.Undefined, "no FUNCTION or SUB named H", 3},
+		{"SERVE", structured("d.bas", function(1, "F", params(param("req", "", nil)), "", &ast.ServeStmt{At: at(2)})), diag.Syntax, "SERVE goes in top-level code", 2},
+		{"RESPOND", structured("d.bas", &ast.RespondStmt{At: at(1), Status: num(42), Value: str1}), diag.TypeMismatch, "RESPOND needs an HTTP status from 100 to 599", 1},
 		{"GROUP", structured("d.bas", &ast.GroupStmt{At: at(1), Prefix: "/v1"}), diag.NotImplemented, "task 2.7", 1},
 		{"USE", structured("d.bas", &ast.UseStmt{At: at(1), Fn: id("Auth")}), diag.NotImplemented, "task 2.3", 1},
 		{"TRY", structured("d.bas", &ast.TryStmt{At: at(1)}), diag.NotImplemented, "task 2.2", 1},
@@ -210,7 +210,7 @@ func TestDiagnostics(t *testing.T) {
 		{"SHARED DIM", structured("d.bas", &ast.DimStmt{At: at(2), Name: "X", Shared: true}), diag.NotImplemented, "task 4.3", 2},
 		{"later built-in", structured("d.bas", pr(4, call("SQL", str("SELECT 1")))), diag.NotImplemented, "SQL is not built yet (task 3.1", 4},
 		{"method call", structured("d.bas", do(1, &ast.CallExpr{Fn: mem(id("uuid"), "NewString")})), diag.NotImplemented, "task 3.5", 1},
-		{"classic ROUTE GOSUB", classic("d.bas", ln(10, 1, &ast.RouteStmt{At: at(1), Method: "GET", Path: "/", GosubLine: 100}), ln(100, 2, end(2))), diag.NotImplemented, "task 2.1", 1},
+		{"classic ROUTE GOSUB", classic("d.bas", ln(10, 1, &ast.RouteStmt{At: at(1), Method: "GET", Path: "/", GosubLine: 100}), ln(20, 2, end(2))), diag.Undefined, "there is no line 100", 1},
 		{"GOTO in structured mode", structured("d.bas", pr(1, str("HELLO")), gotoS(2, 10)), diag.Syntax, "GOTO only works in classic mode; add line numbers, or use a loop or a FUNCTION", 2},
 		{"GOSUB in structured mode", structured("d.bas", gosub(2, 10)), diag.Syntax, "GOSUB only works in classic mode", 2},
 		{"undefined variable", structured("d.bas", pr(5, id("nope"))), diag.Undefined, "no variable named NOPE", 5},
