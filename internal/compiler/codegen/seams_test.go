@@ -85,3 +85,31 @@ func TestMiddlewareSeams(t *testing.T) {
 		}
 	}
 }
+
+// TestPhase3Seams verifies that SQL/SQLONE/SQLEXEC and FETCH compile to their
+// runtime entry points in rt/db.go and rt/fetch.go.
+func TestPhase3Seams(t *testing.T) {
+	p := structured("p3.bas",
+		pr(1, call("SQL", str("SELECT $1"), num(1))),
+		pr(2, call("SQLONE", str("SELECT 1"))),
+		pr(3, call("SQLEXEC", str("DELETE FROM t WHERE id = $1 AND a = $2"), num(1), str("x"))),
+		pr(4, call("FETCH", str("https://example.com"))),
+		pr(5, call("FETCH", str("https://example.com"), mapl("method", str("POST")))),
+	)
+	files, ds := codegen.Generate(p, codegen.Options{})
+	if ds.HasErrors() {
+		t.Fatal(ds)
+	}
+	src := string(files[1].Src)
+	for _, want := range []string{
+		`rt.SQL(c, "SELECT $1", int64(1))`,
+		`rt.SQLOne(c, "SELECT 1")`,
+		`rt.SQLExec(c, "DELETE FROM t WHERE id = $1 AND a = $2", int64(1), "x")`,
+		`rt.Fetch(c, "https://example.com")`,
+		`rt.Fetch(c, "https://example.com", rt.MapOf("method", "POST"))`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("generated source lacks %q:\n%s", want, src)
+		}
+	}
+}

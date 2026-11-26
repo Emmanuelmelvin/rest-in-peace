@@ -208,7 +208,7 @@ func TestDiagnostics(t *testing.T) {
 		{"TEST", structured("d.bas", &ast.TestDecl{At: at(1), Name: "t"}), diag.NotImplemented, "task 4.2", 1},
 		{"EXPECT", structured("d.bas", &ast.ExpectStmt{At: at(1), Cond: boolean(true)}), diag.NotImplemented, "task 4.2", 1},
 		{"SHARED DIM", structured("d.bas", &ast.DimStmt{At: at(2), Name: "X", Shared: true}), diag.NotImplemented, "task 4.3", 2},
-		{"later built-in", structured("d.bas", pr(4, call("SQL", str("SELECT 1")))), diag.NotImplemented, "SQL is not built yet (task 3.1", 4},
+		{"later built-in", structured("d.bas", pr(4, call("REQUEST", str("GET"), str("/")))), diag.NotImplemented, "REQUEST is not built yet (task 4.2", 4},
 		{"method call", structured("d.bas", do(1, &ast.CallExpr{Fn: mem(id("uuid"), "NewString")})), diag.NotImplemented, "task 3.5", 1},
 		{"classic ROUTE GOSUB", classic("d.bas", ln(10, 1, &ast.RouteStmt{At: at(1), Method: "GET", Path: "/", GosubLine: 100}), ln(20, 2, end(2))), diag.Undefined, "there is no line 100", 1},
 		{"GOTO in structured mode", structured("d.bas", pr(1, str("HELLO")), gotoS(2, 10)), diag.Syntax, "GOTO only works in classic mode; add line numbers, or use a loop or a FUNCTION", 2},

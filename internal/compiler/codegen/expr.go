@@ -44,6 +44,12 @@ var builtins = map[string]builtin{
 	// Error values for THROW (task 2.2, rt/errors.go).
 	"ERROR":     {fn: "rt.NewError", min: 1, max: 1, t: tAny},
 	"HTTPERROR": {fn: "rt.NewHTTPError", min: 2, max: 3, t: tAny},
+	// Database queries (task 3.1, rt/db.go). max: -1 means variadic.
+	"SQL":     {fn: "rt.SQL", min: 1, max: -1, t: tAny, ctx: true, args: []typ{tStr}},
+	"SQLONE":  {fn: "rt.SQLOne", min: 1, max: -1, t: tAny, ctx: true, args: []typ{tStr}},
+	"SQLEXEC": {fn: "rt.SQLExec", min: 1, max: -1, t: tInt, ctx: true, args: []typ{tStr}},
+	// Outbound HTTP (task 3.7, rt/fetch.go).
+	"FETCH": {fn: "rt.Fetch", min: 1, max: 2, t: tAny, ctx: true, args: []typ{tStr}},
 
 	// Phase 1 (rt/builtins.go).
 	"LEN":   {fn: "rt.Len", min: 1, max: 1, t: tInt},
@@ -61,8 +67,6 @@ var builtins = map[string]builtin{
 
 // laterBuiltins are the language.md built-ins that later tasks add.
 var laterBuiltins = map[string]string{
-	"SQL": "3.1", "SQLONE": "3.1", "SQLEXEC": "3.1",
-	"FETCH":   "3.7",
 	"REQUEST": "4.2",
 	"NEW":     "3.5",
 }
@@ -114,6 +118,9 @@ func (g *gen) expr(e ast.Expr, sc *scope) gexpr {
 	case *ast.Ident:
 		return g.ident(e, sc)
 	case *ast.MemberExpr:
+		if ge, ok := g.goMember(e, sc); ok {
+			return ge
+		}
 		x := g.expr(e.X, sc)
 		return gexpr{"rt.Get(" + x.code + ", " + strconv.Quote(e.Name) + ")", tAny, false}
 	case *ast.IndexExpr:
@@ -174,20 +181,28 @@ func (g *gen) ident(e *ast.Ident, sc *scope) gexpr {
 func (g *gen) call(e *ast.CallExpr, sc *scope, asStmt bool) gexpr {
 	id, ok := e.Fn.(*ast.Ident)
 	if !ok {
-		g.todo(e.At, "3.5", "calling a method or a function value")
-		return bad
+		return g.goMethodCall(e, sc, asStmt)
 	}
 	name := canon(id.Name)
 	if fn := g.funcs[name]; fn != nil {
 		return g.callUser(e, fn, sc, asStmt)
 	}
 	if b, ok := builtins[name]; ok {
-		if len(e.Args) < b.min || len(e.Args) > b.max {
-			want := strconv.Itoa(b.min) + " argument"
-			if b.max != b.min {
+		if len(e.Args) < b.min || (b.max >= 0 && len(e.Args) > b.max) {
+			var want string
+			switch {
+			case b.max < 0:
+				want = "at least " + strconv.Itoa(b.min) + " argument"
+				if b.min != 1 {
+					want += "s"
+				}
+			case b.max != b.min:
 				want = strconv.Itoa(b.min) + " or " + strconv.Itoa(b.max) + " arguments"
-			} else if b.min != 1 {
-				want += "s"
+			default:
+				want = strconv.Itoa(b.min) + " argument"
+				if b.min != 1 {
+					want += "s"
+				}
 			}
 			g.errorf(e.At, diag.Syntax, "%s takes %s, not %d", name, want, len(e.Args))
 			return bad
@@ -208,6 +223,9 @@ func (g *gen) call(e *ast.CallExpr, sc *scope, asStmt bool) gexpr {
 	if _, ok := middlewareFactories[name]; ok {
 		g.errorf(e.At, diag.Syntax, "%s is a middleware built-in; register it with USE %s(…)", name, name)
 		return bad
+	}
+	if ge, ok := g.goIdentCall(e, name, sc, asStmt); ok {
+		return ge
 	}
 	if task, ok := laterBuiltins[name]; ok {
 		g.todo(e.At, task, name)

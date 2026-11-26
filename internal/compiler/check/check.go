@@ -83,8 +83,9 @@ func Check(p *ast.Program) diag.List {
 		})
 		all = append(all, c.diags...)
 	}
-	// TODO(task 3.4): IMPORT/EXPORT resolution across files; using a name that isn't exported.
-	// TODO(task 3.6): ?INJECTION RISK WARNING for SQL strings built from req values.
+	all = append(all, checkModules(p)...)
+	all = append(all, checkGoImports(p)...)
+	all = append(all, checkSQLInjection(p)...)
 	// TODO(task 4.3): ?SHARED STATE WARNING for module variables assigned in handlers.
 	return all
 }

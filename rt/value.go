@@ -175,7 +175,9 @@ func Get(v Value, key string) Value {
 		val, _ := x.Get(key)
 		return val
 	default:
-		// TODO(task 3.5): Host values from Go interop use reflective field access.
+		if val, ok := hostGet(v, key); ok {
+			return val
+		}
 		panic(Errorf(KindTypeMismatch, "cannot read %q of a %s", key, TypeName(v)))
 	}
 }
@@ -223,6 +225,9 @@ func SetMember(v Value, key string, val Value) {
 		}
 		x.Set(key, val)
 	default:
+		if hostSet(v, key, val) {
+			return
+		}
 		panic(Errorf(KindTypeMismatch, "cannot set %q on a %s", key, TypeName(v)))
 	}
 }

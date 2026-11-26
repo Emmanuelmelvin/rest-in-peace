@@ -25,6 +25,7 @@ func (g *gen) structuredFile(o *out) {
 	g.collectFuncs()
 	top := &scope{}
 	g.collectDecls(g.file.Body, top, g.addGlobal)
+	g.bindBasImports()
 	for _, fn := range g.funcOrder {
 		g.collectLocals(fn)
 	}
@@ -611,13 +612,12 @@ func (g *gen) laterStmt(o *out, s ast.Stmt, sc *scope) bool {
 	case *ast.ThrowStmt, *ast.TryStmt:
 		g.errorStmt(o, s, sc)
 		return true
+	case *ast.DBConnectStmt, *ast.TransactionStmt:
+		g.dbStmt(o, s, sc)
+		return true
 	}
 	task, what := "", ""
 	switch s.(type) {
-	case *ast.DBConnectStmt:
-		task, what = "3.1", "DBCONNECT"
-	case *ast.TransactionStmt:
-		task, what = "3.2", "TRANSACTION"
 	case *ast.TestDecl:
 		task, what = "4.2", "TEST"
 	case *ast.ExpectStmt:
