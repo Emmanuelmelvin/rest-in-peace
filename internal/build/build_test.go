@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"go/parser"
+	"go/token"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -160,24 +163,99 @@ func TestGoModContent(t *testing.T) {
 }
 
 // TestGoModPinsRuntimeImports checks that every module rt imports is pinned in
-// the generated go.mod. If this fails after rt gains an import, add a blank
-// import of that package to internal/build so the CLI links the module and its
-// version appears in the build info.
+// the generated go.mod and linked by internal/build. If this fails after rt
+// gains an import, add a blank import of that package to internal/build/deps.go
+// so the CLI links the module and its version appears in the build info.
 func TestGoModPinsRuntimeImports(t *testing.T) {
 	imports, err := runtimeImports()
 	if err != nil {
 		t.Fatal(err)
 	}
+	buildImports, err := packageImports(".")
+	if err != nil {
+		t.Fatal(err)
+	}
 	mod := string(goMod())
+	reqs := runtimeRequires()
 	for _, imp := range imports {
+		var modPath string
 		pinned := false
-		for _, r := range runtimeRequires() {
+		for _, r := range reqs {
 			if imp == r.Path || strings.HasPrefix(imp, r.Path+"/") {
-				pinned = strings.Contains(mod, "\t"+r.Path+" "+r.Version+"\n")
+				if strings.Contains(mod, "\t"+r.Path+" "+r.Version+"\n") {
+					pinned = true
+					modPath = r.Path
+				}
 			}
 		}
 		if !pinned {
 			t.Errorf("rt imports %s, but go.mod does not pin its module:\n%s", imp, mod)
+			continue
+		}
+		linked := false
+		for _, bi := range buildImports {
+			if bi == modPath || strings.HasPrefix(bi, modPath+"/") {
+				linked = true
+				break
+			}
+		}
+		if !linked {
+			t.Errorf("rt imports %s (module %s), but internal/build does not import it; add a blank import in internal/build/deps.go", imp, modPath)
+		}
+	}
+}
+
+func packageImports(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	fset := token.NewFileSet()
+	var out []string
+	for _, e := range entries {
+		name := e.Name()
+		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		f, err := parser.ParseFile(fset, filepath.Join(dir, name), nil, parser.ImportsOnly)
+		if err != nil {
+			return nil, err
+		}
+		for _, imp := range f.Imports {
+			p, err := strconv.Unquote(imp.Path.Value)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
+
+func TestParseGoModRequires(t *testing.T) {
+	src := `module example.com/app
+
+go 1.24
+
+require github.com/shopspring/decimal v1.4.0
+
+require (
+	github.com/golang-jwt/jwt/v5 v5.3.1 // direct
+	example.com/indirect v0.1.0 // indirect
+)
+`
+	got := parseGoModRequires([]byte(src))
+	want := []struct{ path, version string }{
+		{"github.com/shopspring/decimal", "v1.4.0"},
+		{"github.com/golang-jwt/jwt/v5", "v5.3.1"},
+		{"example.com/indirect", "v0.1.0"},
+	}
+	if len(got) != len(want) {
+		t.Fatalf("got %d requires, want %d", len(got), len(want))
+	}
+	for i, w := range want {
+		if got[i].Path != w.path || got[i].Version != w.version {
+			t.Errorf("[%d] = %s %s, want %s %s", i, got[i].Path, got[i].Version, w.path, w.version)
 		}
 	}
 }

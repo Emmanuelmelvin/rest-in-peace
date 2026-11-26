@@ -202,21 +202,71 @@ func goMod() []byte {
 // rip was built and tested with. A module is only in the build info if the CLI
 // links it, so each module rt imports must also be imported (blank) by a
 // package the CLI links; TestGoModPinsRuntimeImports fails until it is.
+//
+// Under `go test` on Go 1.24, debug.ReadBuildInfo omits Deps; in that case we
+// fall back to the embedded go.mod so tests still pin the exact versions.
 func runtimeRequires() []*debug.Module {
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		return nil
-	}
 	imports, err := runtimeImports()
 	if err != nil {
 		return nil
 	}
+	var deps []*debug.Module
+	if info, ok := debug.ReadBuildInfo(); ok && len(info.Deps) > 0 {
+		deps = info.Deps
+	} else {
+		deps = parseGoModRequires(rip.GoMod)
+	}
 	var out []*debug.Module
-	for _, d := range info.Deps {
+	for _, d := range deps {
 		for _, imp := range imports {
 			if imp == d.Path || strings.HasPrefix(imp, d.Path+"/") {
 				out = append(out, d)
 				break
+			}
+		}
+	}
+	return out
+}
+
+// parseGoModRequires extracts module path and version pairs from require
+// directives in a go.mod file.
+func parseGoModRequires(data []byte) []*debug.Module {
+	var out []*debug.Module
+	inBlock := false
+	for _, line := range strings.Split(string(data), "\n") {
+		if i := strings.Index(line, "//"); i >= 0 {
+			line = line[:i]
+		}
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		if inBlock {
+			if line == ")" {
+				inBlock = false
+				continue
+			}
+			fields := strings.Fields(line)
+			if len(fields) >= 2 {
+				out = append(out, &debug.Module{
+					Path:    strings.Trim(fields[0], `"`),
+					Version: strings.Trim(fields[1], `"`),
+				})
+			}
+			continue
+		}
+		if rest, ok := strings.CutPrefix(line, "require"); ok && (rest == "" || rest[0] == ' ' || rest[0] == '\t' || rest[0] == '(') {
+			rest = strings.TrimSpace(rest)
+			if rest == "(" {
+				inBlock = true
+				continue
+			}
+			fields := strings.Fields(rest)
+			if len(fields) >= 2 {
+				out = append(out, &debug.Module{
+					Path:    strings.Trim(fields[0], `"`),
+					Version: strings.Trim(fields[1], `"`),
+				})
 			}
 		}
 	}
