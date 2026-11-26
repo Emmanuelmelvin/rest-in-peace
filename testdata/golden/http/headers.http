@@ -1,0 +1,16 @@
+req.headers has lowercase keys, whatever case the client sent (Requirement 7.2).
+
+### mixed-case header names
+GET /whoami
+X-Ghost-Name: Casper
+X-TOKEN: boo
+
+=> 200
+
+{"ghost": "Casper", "asSent": null, "token": "boo"}
+
+### missing headers are NIL
+GET /whoami
+=> 200
+
+{"ghost": null, "asSent": null, "token": null}

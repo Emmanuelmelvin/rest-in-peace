@@ -1,0 +1,33 @@
+Middleware runs in registration order before handlers, can write to req.ctx,
+can be scoped with ON "/path/*", and stops the handler when it calls RESPOND
+or throws (Requirement 8.1, 8.2).
+
+### global middleware runs in order; scoped middleware is skipped on /public
+GET /public
+=> 200
+
+{"order": ["first", "second"], "admin": null}
+
+### scoped middleware runs on /admin/* and passes through
+GET /admin/vault
+X-Pass: ok
+
+=> 200
+
+{"order": ["first", "second"], "admin": true}
+
+### middleware RESPOND stops the handler
+GET /admin/vault
+X-Pass: deny
+
+=> 403
+
+{"error": "FORBIDDEN BY THE CRYPT"}
+
+### middleware THROW stops the handler
+GET /admin/vault
+X-Pass: throw
+
+=> 401
+
+{"error": "NO PASS PROVIDED"}

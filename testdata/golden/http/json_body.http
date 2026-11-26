@@ -1,0 +1,26 @@
+req.body is the parsed JSON body (Requirement 7.2), and parsed maps keep the
+body's key order (Requirement 3.5).
+
+### echo keeps key order and nesting
+POST /echo
+
+{"zeta": 1, "alpha": {"b": [1, 2.5, "three", null, true], "a": {}}, "mid": "x"}
+=> 200
+
+{"zeta": 1, "alpha": {"b": [1, 2.5, "three", null, true], "a": {}}, "mid": "x"}
+
+### fields of the body
+POST /summon
+
+{"name": "Vlad", "tags": ["count", "vampire"], "age": 593, "alive": false}
+=> 200
+
+{"name": "Vlad", "firstTag": "count", "tagCount": 2, "nextAge": 594, "undead": true}
+
+### an array body
+POST /echo
+
+[1, "two", {"three": 3}]
+=> 200
+
+[1, "two", {"three": 3}]

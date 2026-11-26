@@ -1,0 +1,26 @@
+THROW HTTPERROR(status, message, details) that escapes a handler responds
+with its status and {"error": message, "details": details} (Requirement 6.4).
+Not pinned by the spec, so not tested: whether "details" appears when
+HTTPERROR is given no details.
+
+### thrown in the handler
+GET /ghosts/13
+=> 404
+
+{"error": "GHOST IS DEAD", "details": {"id": "13"}}
+
+### thrown in a SUB the handler calls
+POST /ghosts
+
+{"age": 300}
+=> 422
+
+{"error": "A GHOST NEEDS A NAME", "details": {"missing": ["name"], "got": {"age": 300}}}
+
+### no throw
+POST /ghosts
+
+{"name": "Casper"}
+=> 200
+
+{"created": true}

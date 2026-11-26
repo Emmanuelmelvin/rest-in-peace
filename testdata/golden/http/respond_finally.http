@@ -1,0 +1,33 @@
+RESPOND inside TRY sends its response: CATCH doesn't catch it, the code after
+END TRY doesn't run, and FINALLY does (Requirement 6.7, 7.4). FINALLY counts
+its runs in a module-level map that a second route reads.
+
+### nothing has run yet
+GET /cleanups
+=> 200
+
+{"cleanups": 0}
+
+### RESPOND inside TRY
+GET /haunt
+=> 202
+
+{"status": "HAUNTING"}
+
+### FINALLY ran once
+GET /cleanups
+=> 200
+
+{"cleanups": 1}
+
+### again
+GET /haunt
+=> 202
+
+{"status": "HAUNTING"}
+
+### FINALLY ran twice
+GET /cleanups
+=> 200
+
+{"cleanups": 2}

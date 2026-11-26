@@ -1,0 +1,34 @@
+A body that is not valid JSON gets 400 {"error": "BODY IS NOT VALID JSON"}
+(Requirement 7.9).
+
+### truncated JSON
+POST /graves
+
+{"title":
+=> 400
+
+{"error": "BODY IS NOT VALID JSON"}
+
+### not JSON at all
+POST /graves
+
+bury me
+=> 400
+
+{"error": "BODY IS NOT VALID JSON"}
+
+### trailing garbage
+POST /graves
+
+{"title": "x"} oops
+=> 400
+
+{"error": "BODY IS NOT VALID JSON"}
+
+### valid JSON still works
+POST /graves
+
+{"title": "x"}
+=> 201
+
+{"dug": true}

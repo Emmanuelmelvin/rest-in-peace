@@ -37,10 +37,25 @@ func runCase(t *testing.T, path string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	base := strings.TrimSuffix(path, ".bas")
+	script, isHTTP := readOptional(t, base+".http")
+	if isHTTP {
+		// HTTP goldens are written ahead of the server, so make sure that the
+		// only thing wrong with them is what isn't built yet.
+		for _, d := range res.Diagnostics {
+			if d.Severity == diag.Error && d.Kind != diag.NotImplemented {
+				t.Errorf("compile error in an HTTP golden: %s", d)
+			}
+		}
+	}
 	if d, ok := res.Diagnostics.NotImplemented(); ok {
 		t.Skipf("compiler not built yet: %s", d)
 	}
-	base := strings.TrimSuffix(path, ".bas")
+
+	if isHTTP {
+		runHTTPCase(t, path, res, script)
+		return
+	}
 
 	if want, ok := readOptional(t, base+".err"); ok {
 		var got []string
@@ -138,11 +153,17 @@ func TestGoldenLayout(t *testing.T) {
 		_, hasErr := readOptional(t, base+".err")
 		_, hasOut := readOptional(t, base+".out")
 		_, hasStderr := readOptional(t, base+".stderr")
+		script, hasHTTP := readOptional(t, base+".http")
 		switch {
+		case hasHTTP && (hasErr || hasOut || hasStderr):
+			t.Errorf("%s: an .http case can't also have .err, .out or .stderr", caseName(c))
 		case hasErr && (hasOut || hasStderr):
 			t.Errorf("%s: a .err case can't also have .out or .stderr", caseName(c))
-		case !hasErr && !hasOut && !hasStderr:
-			t.Errorf("%s: needs a .out, .stderr or .err file", caseName(c))
+		case !hasErr && !hasOut && !hasStderr && !hasHTTP:
+			t.Errorf("%s: needs a .out, .stderr, .err or .http file", caseName(c))
+		}
+		if hasHTTP {
+			checkScriptLayout(t, caseName(c)+".http", script)
 		}
 		for _, ext := range []string{".err", ".stderr"} {
 			want, ok := readOptional(t, base+ext)
@@ -188,7 +209,7 @@ func TestGoldenLayout(t *testing.T) {
 		ext := filepath.Ext(p)
 		switch ext {
 		case ".bas":
-		case ".out", ".err", ".stderr":
+		case ".out", ".err", ".stderr", ".http":
 			if !bases[strings.TrimSuffix(p, ext)] {
 				t.Errorf("%s has no .bas file next to it", p)
 			}
