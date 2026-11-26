@@ -27,7 +27,7 @@ Every track starts from the branch `phase2-seams`, which added:
 7. **Don't tick boxes in `tasks.md`**; they're ticked at merge time.
 
 ## Merge order
-E → D → F into `main`, then the full suite runs end to end, including the HTTP goldens that F wrote ahead of D.
+`phase2-seams` (merged, #8) → E (merged, #9) → D (merged, #10) → F (merged, #11) into `main`, then all 20 Wave 1 HTTP golden programs passed end to end (with the 2 Wave 2 goldens `middleware` and `route_group` compiling cleanly and skipping on `NOT IMPLEMENTED`).
 
 ## Wave 2 (after the merge)
 2.3 `USE` middleware with path scoping, `APIKEY`, `CORS`, `REQUESTLOG` · 2.7 `ROUTE GROUP`, `RATELIMIT`, `BEARERJWT` · 2.8 runtime type checks for `AS <TYPE>` on dynamic boundaries.

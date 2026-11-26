@@ -285,3 +285,6 @@ These were not settled in the original spec. The proposed defaults are used in `
 | What do classic handlers do under concurrency? | Run one at a time per program (7.10) |
 | Should named `.bas` imports use braces, like Go imports? | Yes: `IMPORT { A, B } FROM "./x.bas"`, so braces always mean named imports |
 | Where does a classic program's top-level run stop? | At `SERVE` or `END`; later lines run only as GOSUB targets (matches the classic Hello World) |
+| What status and body does a too-large request body return, and how is the cap configured? | `413 {"error": "BODY IS TOO LARGE"}`, configured via `RIP_MAX_BODY_BYTES` (default 1 MB) |
+| Does an `HTTPERROR` with no details include a `"details"` key? | No — omit `"details"` and return `{"error": message}` |
+| What does a known path with an unmatched HTTP method return? | `404 {"error": "ROUTE NOT FOUND IN THIS REALM"}` |
