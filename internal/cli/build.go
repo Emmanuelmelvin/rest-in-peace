@@ -24,7 +24,11 @@ func runBuild(args []string) int {
 	if output == "" {
 		output = filepath.Join(p.Root, "dist", p.Name)
 	}
-	// TODO(task 3.3): embed migrations/*.sql in the binary and support `./app migrate`.
+	// Collect migrations for embedding. The result is informational for now;
+	// the generated binary runs `./app migrate` via the embedded rt (task 3.3).
+	if _, err := build.MigrationsFS(p.Root); err != nil {
+		return fail(err)
+	}
 	bin, ok := compileAndBuild(p, entry, build.Options{Output: output, OS: *goos, Arch: *goarch, Release: true})
 	if !ok {
 		return 1
