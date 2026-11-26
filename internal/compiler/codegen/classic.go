@@ -162,6 +162,12 @@ func (g *gen) classicScan(stmts []ast.Stmt) {
 			if s.GosubLine != 0 {
 				target(s.At, s.GosubLine)
 			}
+		case *ast.GroupStmt:
+			for _, r := range s.Routes {
+				if r.GosubLine != 0 {
+					target(r.At, r.GosubLine)
+				}
+			}
 		case *ast.RespondStmt:
 			ident(s.Status)
 			ident(s.Value)

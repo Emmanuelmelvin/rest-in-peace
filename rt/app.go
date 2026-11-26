@@ -37,6 +37,12 @@ const kindRoute Kind = "SYNTAX"
 // ShutdownTimeout is how long in-flight requests get to finish on SIGTERM (Requirement 14.5).
 const ShutdownTimeout = 10 * time.Second
 
+// middlewareEntry is one registered USE middleware with its optional path scope.
+type middlewareEntry struct {
+	fn    Handler
+	scope string
+}
+
 // App is the HTTP application that a program's top-level statements build.
 type App struct {
 	entry string
@@ -48,8 +54,10 @@ type App struct {
 	// RIP_MAX_BODY_BYTES, defaulting to 1 MB.
 	MaxBody int64
 
+	middleware []middlewareEntry // ordered USE middleware (Requirement 8.1)
+
 	classicMu sync.Mutex // classic handlers run one at a time (Requirement 7.10)
-	started   bool       // set once Handler has been built; ROUTE after that is an error
+	started   bool       // set once Handler has been built; ROUTE/USE after that is an error
 
 	shutdownMu sync.Mutex
 	onShutdown []func()
@@ -86,10 +94,65 @@ func (a *App) RouteGosub(method, path string, line int, run ClassicEntry) {
 	})
 }
 
-// Use implements USE fn [ON "/scope/*"] (Requirement 8.1).
+// Use implements USE fn [ON "/scope/*"] (Requirement 8.1). Middleware runs
+// in registration order before every matching route handler.
 func (a *App) Use(mw Handler, scope string) {
-	// TODO(task 2.3): ordered middleware chain with path scoping.
-	panic(notBuilt("USE", "2.3"))
+	if a.started {
+		panic(Errorf(KindInternal, "USE ran after the server started; USE goes in top-level code, before SERVE"))
+	}
+	if mw == nil {
+		panic(Errorf(KindInternal, "USE requires a middleware handler"))
+	}
+	if scope != "" {
+		if err := validateScope(scope); err != nil {
+			panic(Errorf(kindRoute, "%v", err))
+		}
+	}
+	a.middleware = append(a.middleware, middlewareEntry{fn: mw, scope: scope})
+}
+
+func validateScope(scope string) error {
+	if !strings.HasPrefix(scope, "/") {
+		return fmt.Errorf(`a USE scope starts with /, like "/admin/*"; got %q`, scope)
+	}
+	if strings.ContainsAny(scope, "{}") {
+		return fmt.Errorf(`a USE scope cannot contain { or }; got %q`, scope)
+	}
+	if strings.Contains(scope, "//") {
+		return fmt.Errorf(`the USE scope %q has an empty part (//)`, scope)
+	}
+	trimmed := strings.TrimSuffix(scope, "/*")
+	if strings.Contains(trimmed, "*") {
+		return fmt.Errorf(`* only works at the end of a USE scope, like "/admin/*"`)
+	}
+	return nil
+}
+
+// scopeMatches reports whether a USE scope applies to path. An empty scope
+// matches every path; "/admin/*" matches "/admin" and anything under "/admin/";
+// any other scope matches that exact path.
+func scopeMatches(scope, path string) bool {
+	if scope == "" || scope == "/*" {
+		return true
+	}
+	if strings.HasSuffix(scope, "/*") {
+		prefix := strings.TrimSuffix(scope, "/*")
+		return path == prefix || strings.HasPrefix(path, prefix+"/")
+	}
+	return path == scope
+}
+
+func (a *App) matchingMiddleware(path string) []Handler {
+	if len(a.middleware) == 0 {
+		return nil
+	}
+	var out []Handler
+	for _, m := range a.middleware {
+		if scopeMatches(m.scope, path) {
+			out = append(out, m.fn)
+		}
+	}
+	return out
 }
 
 // Serve implements SERVE [port]. It only records the port: Run starts
@@ -124,6 +187,14 @@ func (a *App) Handler() http.Handler {
 		if _, pattern := a.mux.Handler(r); pattern == "" {
 			if r.URL.Path == "/_health" && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
 				writeJSON(w, r, http.StatusOK, MapOf("status", "ALIVE"))
+				return
+			}
+			// Let matching middleware handle OPTIONS preflight (e.g. CORS).
+			if r.Method == http.MethodOptions && len(a.matchingMiddleware(r.URL.Path)) > 0 {
+				a.serveRequest(w, r, func(c *Ctx) Value {
+					RespondNow(c, http.StatusNotFound, MapOf("error", "ROUTE NOT FOUND IN THIS REALM"))
+					return nil
+				})
 				return
 			}
 			writeJSON(w, r, http.StatusNotFound, MapOf("error", "ROUTE NOT FOUND IN THIS REALM"))
@@ -262,8 +333,8 @@ func isParamName(s string) bool {
 	return true
 }
 
-// serveRequest parses the request, runs the handler on a fresh Ctx and
-// writes the response.
+// serveRequest parses the request, runs matching USE middleware in order,
+// runs the handler on a fresh Ctx, writes the response, and triggers OnFinish.
 func (a *App) serveRequest(w http.ResponseWriter, r *http.Request, run func(c *Ctx) Value) {
 	req, status, body := a.parseRequest(w, r)
 	if req == nil {
@@ -273,8 +344,20 @@ func (a *App) serveRequest(w http.ResponseWriter, r *http.Request, run func(c *C
 	c := NewCtx(r.Context())
 	c.app = a
 	c.Req = req
-	status, body, headers := callHandler(c, run)
-	writeResponse(w, r, status, body, headers)
+	mws := a.matchingMiddleware(r.URL.Path)
+	exec := run
+	if len(mws) > 0 {
+		reqVal := req.Value()
+		exec = func(c *Ctx) Value {
+			for _, mw := range mws {
+				mw(c, reqVal)
+			}
+			return run(c)
+		}
+	}
+	status, body, headers := callHandler(c, exec)
+	status = writeResponse(w, r, c, status, body, headers)
+	c.runOnFinish(status)
 }
 
 // callHandler runs a handler and turns how it ended into a response:
@@ -308,14 +391,15 @@ func callHandler(c *Ctx, run func(c *Ctx) Value) (status int, body Value, header
 // it returns a nil Request and the error response instead.
 func (a *App) parseRequest(w http.ResponseWriter, r *http.Request) (*Request, int, Value) {
 	req := &Request{
-		ID:      newRequestID(),
-		Method:  r.Method,
-		Path:    r.URL.Path,
-		Params:  NewMap(),
-		Query:   parseQuery(r.URL.RawQuery),
-		Headers: NewMap(),
-		Body:    NewMap(),
-		Ctx:     NewMap(),
+		ID:         newRequestID(),
+		Method:     r.Method,
+		Path:       r.URL.Path,
+		RemoteAddr: r.RemoteAddr,
+		Params:     NewMap(),
+		Query:      parseQuery(r.URL.RawQuery),
+		Headers:    NewMap(),
+		Body:       NewMap(),
+		Ctx:        NewMap(),
 	}
 	for _, name := range patternParams(r.Pattern) {
 		req.Params.Set(name, r.PathValue(name))
@@ -374,13 +458,20 @@ func newRequestID() string {
 	return hex.EncodeToString(b[:])
 }
 
-// writeResponse writes a handler's response. The body is JSON, except that a
-// STRING body is written as-is when the headers set Content-Type.
-func writeResponse(w http.ResponseWriter, r *http.Request, status int, body Value, headers *Map) {
+// writeResponse writes a handler's response and returns the final HTTP status.
+// Headers set via c.SetResponseHeader are applied first; explicit RESPOND
+// headers override them. The body is JSON, except that a STRING body is
+// written as-is when the headers set Content-Type.
+func writeResponse(w http.ResponseWriter, r *http.Request, c *Ctx, status int, body Value, headers *Map) int {
 	if status < 100 || status > 599 {
 		status = http.StatusInternalServerError
 		body = MapOf("error", "INTERNAL ERROR")
 		headers = nil
+	}
+	if c != nil && len(c.respOrder) > 0 {
+		for _, k := range c.respOrder {
+			w.Header().Set(k, c.respHeaders[k])
+		}
 	}
 	if headers != nil {
 		for _, k := range headers.Keys() {
@@ -392,13 +483,13 @@ func writeResponse(w http.ResponseWriter, r *http.Request, status int, body Valu
 			if bodyAllowed(r, status) {
 				_, _ = io.WriteString(w, s)
 			}
-			return
+			return status
 		}
 	}
-	writeJSON(w, r, status, body)
+	return writeJSON(w, r, status, body)
 }
 
-func writeJSON(w http.ResponseWriter, r *http.Request, status int, v Value) {
+func writeJSON(w http.ResponseWriter, r *http.Request, status int, v Value) int {
 	data, err := marshalValue(v)
 	if err != nil {
 		status = http.StatusInternalServerError
@@ -411,6 +502,7 @@ func writeJSON(w http.ResponseWriter, r *http.Request, status int, v Value) {
 	if bodyAllowed(r, status) {
 		_, _ = w.Write(append(data, '\n'))
 	}
+	return status
 }
 
 func bodyAllowed(r *http.Request, status int) bool {

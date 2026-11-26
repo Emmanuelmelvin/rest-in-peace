@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/ast"
+	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/codegen"
 	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/token"
 )
 
@@ -64,5 +65,33 @@ func TestDecimalSeams(t *testing.T) {
 				t.Errorf("exit %d, stderr %q; want an error containing %q at dec.bas:1", r.exit, r.stderr, c.want)
 			}
 		})
+	}
+}
+
+// TestMiddlewareSeams verifies that USE with each built-in middleware compiles
+// to the Kiro-owned factory functions in rt/middleware.go.
+func TestMiddlewareSeams(t *testing.T) {
+	p := structured("mw.bas",
+		&ast.UseStmt{At: at(1), Fn: call("CORS", mapl("origins", str("*")))},
+		&ast.UseStmt{At: at(2), Fn: call("REQUESTLOG")},
+		&ast.UseStmt{At: at(3), Fn: call("APIKEY", str("API_KEY")), Scope: "/v1/*"},
+		&ast.UseStmt{At: at(4), Fn: call("RATELIMIT", num(60))},
+		&ast.UseStmt{At: at(5), Fn: call("BEARERJWT", str("JWT_SECRET")), Scope: "/admin/*"},
+	)
+	files, ds := codegen.Generate(p, codegen.Options{})
+	if ds.HasErrors() {
+		t.Fatal(ds)
+	}
+	src := string(files[1].Src)
+	for _, want := range []string{
+		`c.App().Use(rt.CORS(rt.MapOf("origins", "*")), "")`,
+		`c.App().Use(rt.RequestLog(), "")`,
+		`c.App().Use(rt.APIKey("API_KEY"), "/v1/*")`,
+		`c.App().Use(rt.RateLimit(int64(60)), "")`,
+		`c.App().Use(rt.BearerJWT("JWT_SECRET"), "/admin/*")`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("generated source lacks %q:\n%s", want, src)
+		}
 	}
 }

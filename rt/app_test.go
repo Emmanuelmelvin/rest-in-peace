@@ -384,3 +384,88 @@ func TestDecodeJSONKeepsOrder(t *testing.T) {
 		}
 	}
 }
+
+func TestMiddlewareChainScopeAndHooks(t *testing.T) {
+	a := NewApp("main.bas")
+	var finished []int
+	a.Use(func(c *Ctx, req Value) Value {
+		c.SetResponseHeader("X-Order", "first")
+		c.SetResponseHeader("X-Cors", "*")
+		c.OnFinish(func(status int) { finished = append(finished, status) })
+		c.Req.Ctx.Set("order", ArrayOf("first"))
+		if c.Req.Method == "OPTIONS" {
+			RespondNow(c, 204, nil)
+		}
+		return nil
+	}, "")
+	a.Use(func(c *Ctx, req Value) Value {
+		arr := c.Req.Ctx.getOrNil("order").(*Array)
+		arr.Items = append(arr.Items, "second")
+		return nil
+	}, "")
+	a.Use(func(c *Ctx, req Value) Value {
+		switch ToString(c.Req.Headers.getOrNil("x-pass")) {
+		case "deny":
+			RespondNow(c, 403, MapOf("error", "DENIED"))
+		case "throw":
+			Throw(NewHTTPError(int64(401), "NO PASS"))
+		}
+		c.Req.Ctx.Set("admin", true)
+		return nil
+	}, "/admin/*")
+
+	a.Route("GET", "/public", func(c *Ctx, req Value) Value {
+		return MapOf("order", c.Req.Ctx.getOrNil("order"), "admin", c.Req.Ctx.getOrNil("admin"))
+	})
+	a.Route("GET", "/admin/vault", func(c *Ctx, req Value) Value {
+		RespondNow(c, 200, MapOf("order", c.Req.Ctx.getOrNil("order"), "admin", c.Req.Ctx.getOrNil("admin")), MapOf("X-Order", "handler"))
+		return nil
+	})
+	a.Route("GET", "/admin2", func(c *Ctx, req Value) Value {
+		return MapOf("admin", c.Req.Ctx.getOrNil("admin"))
+	})
+	h := a.Handler()
+
+	// Global middleware runs in order; scoped middleware is skipped on /public and /admin2.
+	code, body, hdr := do(t, h, "GET", "/public", "")
+	if code != 200 || body != `{"order":["first","second"],"admin":null}` || hdr.Get("X-Cors") != "*" || hdr.Get("X-Order") != "first" {
+		t.Errorf("/public: %d %s %v", code, body, hdr)
+	}
+	code, body, _ = do(t, h, "GET", "/admin2", "")
+	if code != 200 || body != `{"admin":null}` {
+		t.Errorf("/admin2 should not match /admin/*: %d %s", code, body)
+	}
+
+	// Scoped middleware runs on /admin/vault; explicit RESPOND header overrides Ctx header.
+	code, body, hdr = do(t, h, "GET", "/admin/vault", "", "X-Pass", "ok")
+	if code != 200 || body != `{"order":["first","second"],"admin":true}` || hdr.Get("X-Order") != "handler" || hdr.Get("X-Cors") != "*" {
+		t.Errorf("/admin/vault: %d %s %v", code, body, hdr)
+	}
+
+	// Short-circuit via RESPOND and THROW.
+	code, body, hdr = do(t, h, "GET", "/admin/vault", "", "X-Pass", "deny")
+	if code != 403 || body != `{"error":"DENIED"}` || hdr.Get("X-Cors") != "*" {
+		t.Errorf("deny: %d %s %v", code, body, hdr)
+	}
+	code, body, _ = do(t, h, "GET", "/admin/vault", "", "X-Pass", "throw")
+	if code != 401 || body != `{"error":"NO PASS"}` {
+		t.Errorf("throw: %d %s", code, body)
+	}
+
+	// OPTIONS preflight runs matching middleware even without an explicit OPTIONS route.
+	code, body, hdr = do(t, h, "OPTIONS", "/admin/vault", "")
+	if code != 204 || body != "" || hdr.Get("X-Cors") != "*" {
+		t.Errorf("OPTIONS preflight: %d %q %v", code, body, hdr)
+	}
+
+	// OnFinish received every status in order.
+	wantStatuses := []int{200, 200, 200, 403, 401, 204}
+	if len(finished) != len(wantStatuses) {
+		t.Fatalf("OnFinish statuses = %v, want %v", finished, wantStatuses)
+	}
+	for i, w := range wantStatuses {
+		if finished[i] != w {
+			t.Errorf("OnFinish[%d] = %d, want %d", i, finished[i], w)
+		}
+	}
+}
