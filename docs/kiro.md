@@ -25,19 +25,19 @@ The two never edit the same files. Ownership is listed in `.kiro/steering/struct
 Fill in one section per task as you do it.
 
 ### 2.5 DECIMAL and ROUND
-- **Date:**
-- **How it started:** (spec task button / chat / vibe)
-- **What the spec and steering contributed:**
-- **What the hooks caught:**
-- **What I changed by hand, and why:**
-- **Screenshot or clip for the video:**
+- **Date:** 2026-11-26
+- **How it started:** `kiro-cli` (v3.6.2) chat session on branch `kiro/task-2.5-decimal` (branched from `phase2-seams`), pointed at task 2.5 in `.kiro/specs/rip-basic/tasks.md` and `.kiro/steering/`.
+- **What the spec and steering contributed:** `requirements.md` (§3.2, §3.3, §3.7, and "Decisions to confirm") locked in `shopspring/decimal` arithmetic, `DECIMAL` + `INTEGER`/`NUMBER` promotion, half-away-from-zero `ROUND`, and scale-preserving JSON strings (`"215.00"`). `structure.md` kept edits strictly inside `rt/decimal.go` and `rt/decimal_test.go` while matching the existing seam signatures called by `rt/ops.go` and `rt/value.go`. `style.md` guided table-driven tests and `?TYPE MISMATCH ERROR` / `?DIVISION BY ZERO ERROR` messages with hints.
+- **What the hooks / tests caught:** Running `go test ./rt/...` caught that `shopspring/decimal`'s `String()` strips trailing zeros (`"215.00"` → `"215"`). Kiro probed `d.Exponent()` and added `formatDecimal` using `StringFixed(-exp)` for user-meaningful scales (`<= 10`), while falling back to `String()` for high-precision division (`10.00 / 4.00` → `"2.5"` rather than 16 trailing decimals). All 55 `rt` tests, `gofmt`, and `go vet` passed.
+- **What I changed by hand, and why:** Nothing in Kiro's files — committed verbatim as `e30e572`. Merge-time follow-up (outside Kiro's ownership): update `TestDecimalSeams` in `internal/compiler/codegen/seams_test.go`, which still asserts the old `"is not built yet (task 2.5)"` stub panic and now exits `0` because `DECIMAL()` and `ROUND()` work end-to-end.
+- **Screenshot or clip for the video:** *To capture*
 
 ### 2.4 ENV, LOG and redaction
-- **Date:**
-- **How it started:**
-- **What `security.md` changed in the output** (e.g. redaction):
-- **What the hooks caught:**
-- **What I changed by hand, and why:**
+- **Date:** 2026-11-26
+- **How it started:** `kiro-cli` (v3.6.2) chat session on branch `kiro/task-2.4-env-log`, pointed at task 2.4 in `.kiro/specs/rip-basic/tasks.md` and `.kiro/steering/`.
+- **What `security.md` changed in the output** (e.g. redaction): Drove recursive redaction for all five secret key patterns (`password`, `token`, `apiKey`, `authorization`, `secret`, case-insensitive) across top-level fields, nested `*rt.Map`, `*rt.Array`, `map[string]any`, and `[]any` at arbitrary depth, while rendering `*Map`, `*Array`, and `Decimal` cleanly as JSON via `json.RawMessage` and adding thread-safe `SetLogOutput(w io.Writer)` for testing and log redirection.
+- **What the hooks / tests caught:** `gofmt` flagged `rt/log_test.go` and `go vet ./...` caught a missing `fmt` import in `rt/log.go`; Kiro fixed both and verified all 86 `rt` tests passing (`go test -count=1 ./rt/...`).
+- **What I changed by hand, and why:** Nothing in Kiro's files — committed verbatim as `81728f7`. Follow-ups for non-Kiro files: wire `rt.SetLogOutput` (or stdout capture) in `internal/playground` for SSE log streaming (Req 10.4), and ensure `.env` dev loading is wired in `internal/cli/` for `rip dev` / `rip run` (Req 10.2).
 
 ### 3.6 SQL injection warning
 - **Date:**
