@@ -1,0 +1,191 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "RIP BASIC",
+  "scopeName": "source.ripbasic",
+  "fileTypes": ["bas"],
+  "patterns": [
+    { "include": "#line-number" },
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#block-end" },
+    { "include": "#declarations" },
+    { "include": "#route" },
+    { "include": "#jump" },
+    { "include": "#types" },
+    { "include": "#keywords" },
+    { "include": "#constants" },
+    { "include": "#numbers" },
+    { "include": "#builtins" },
+    { "include": "#calls" },
+    { "include": "#members" },
+    { "include": "#operators" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "line-number": {
+      "match": "^\\s*(\\d+)(?=\\s|$)",
+      "captures": {
+        "1": { "name": "entity.name.label.line-number.ripbasic" }
+      }
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.apostrophe.ripbasic",
+          "match": "'.*$"
+        },
+        {
+          "match": "(?i)\\b(REM)\\b(.*)$",
+          "captures": {
+            "0": { "name": "comment.line.rem.ripbasic" },
+            "1": { "name": "keyword.other.rem.ripbasic" }
+          }
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.ripbasic",
+      "begin": "\"",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.string.begin.ripbasic" }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.ripbasic" }
+      },
+      "patterns": [
+        {
+          "name": "constant.character.escape.ripbasic",
+          "match": "\\\\[\"\\\\]"
+        },
+        {
+          "name": "variable.parameter.placeholder.ripbasic",
+          "match": "\\$\\d+"
+        }
+      ]
+    },
+    "block-end": {
+      "match": "(?i)\\b(END)\\s+(FUNCTION|SUB|IF|SELECT|TRY|GROUP|TRANSACTION|TEST)\\b",
+      "captures": {
+        "1": { "name": "keyword.control.end.ripbasic" },
+        "2": { "name": "keyword.control.end.ripbasic" }
+      }
+    },
+    "declarations": {
+      "patterns": [
+        {
+          "match": "(?i)\\b(?:(EXPORT)\\s+)?(FUNCTION|SUB)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": { "name": "storage.modifier.export.ripbasic" },
+            "2": { "name": "storage.type.function.ripbasic" },
+            "3": { "name": "entity.name.function.ripbasic" }
+          }
+        },
+        {
+          "match": "(?i)\\b(TEST)\\b(?=\\s*\")",
+          "captures": {
+            "1": { "name": "keyword.other.test.ripbasic" }
+          }
+        }
+      ]
+    },
+    "route": {
+      "patterns": [
+        {
+          "match": "(?i)\\b(ROUTE)\\s+(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\\b",
+          "captures": {
+            "1": { "name": "keyword.other.route.ripbasic" },
+            "2": { "name": "support.constant.http-method.ripbasic" }
+          }
+        },
+        {
+          "match": "(?i)\\b(CALL)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": { "name": "keyword.control.call.ripbasic" },
+            "2": { "name": "entity.name.function.ripbasic" }
+          }
+        }
+      ]
+    },
+    "jump": {
+      "match": "(?i)\\b(GOTO|GOSUB)\\s+(\\d+)",
+      "captures": {
+        "1": { "name": "keyword.control.jump.ripbasic" },
+        "2": { "name": "entity.name.label.line-number.ripbasic" }
+      }
+    },
+    "types": {
+      "match": "(?i)\\b(AS)\\s+(NUMBER|INTEGER|STRING|BOOLEAN|MAP|ARRAY|DECIMAL|DATE|NIL|ANY)\\b",
+      "captures": {
+        "1": { "name": "keyword.other.as.ripbasic" },
+        "2": { "name": "storage.type.ripbasic" }
+      }
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.ripbasic",
+          "match": "(?i)\\b(IF|THEN|ELSEIF|ELSE|END|FOR|EACH|IN|TO|STEP|NEXT|WHILE|WEND|DO|LOOP|UNTIL|SELECT|CASE|EXIT|RETURN|GOTO|GOSUB|ON|CALL|TRY|CATCH|FINALLY|THROW)\\b"
+        },
+        {
+          "name": "keyword.other.declaration.ripbasic",
+          "match": "(?i)\\b(LET|DIM|SHARED|CONST|AS|FUNCTION|SUB|EXPORT|IMPORT|FROM|GO)\\b"
+        },
+        {
+          "name": "keyword.other.statement.ripbasic",
+          "match": "(?i)\\b(PRINT|ROUTE|GROUP|USE|RESPOND|SERVE|DBCONNECT|TRANSACTION|LOG|TEST|EXPECT)\\b"
+        },
+        {
+          "name": "keyword.operator.word.ripbasic",
+          "match": "(?i)\\b(AND|OR|NOT|MOD)\\b"
+        }
+      ]
+    },
+    "constants": {
+      "name": "constant.language.ripbasic",
+      "match": "(?i)\\b(TRUE|FALSE|NIL)\\b"
+    },
+    "numbers": {
+      "name": "constant.numeric.ripbasic",
+      "match": "(?<![A-Za-z0-9_])(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][+-]?\\d+)?\\b"
+    },
+    "builtins": {
+      "match": "(?i)\\b(LEN|UPPER|LOWER|TRIM|LEFT|RIGHT|MID|STR|VAL|INT|ABS|ROUND|DECIMAL|NOW|ENV|ENVREQUIRE|SQL|SQLONE|SQLEXEC|FETCH|REQUEST|ERROR|HTTPERROR|NEW|PARAM|QUERY|HEADER|BODY|CORS|RATELIMIT|REQUESTLOG|APIKEY|BEARERJWT)\\b(?=\\s*\\()",
+      "captures": {
+        "1": { "name": "support.function.builtin.ripbasic" }
+      }
+    },
+    "calls": {
+      "match": "\\b([A-Za-z_][A-Za-z0-9_]*)(?=\\s*\\()",
+      "captures": {
+        "1": { "name": "entity.name.function.call.ripbasic" }
+      }
+    },
+    "members": {
+      "match": "(\\.)([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": { "name": "punctuation.accessor.ripbasic" },
+        "2": { "name": "variable.other.property.ripbasic" }
+      }
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.comparison.ripbasic",
+          "match": "<>|<=|>=|<|>"
+        },
+        {
+          "name": "keyword.operator.ripbasic",
+          "match": "[=+\\-*/\\\\^&]"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        { "name": "punctuation.separator.colon.ripbasic", "match": ":" },
+        { "name": "punctuation.separator.comma.ripbasic", "match": "," },
+        { "name": "punctuation.separator.semicolon.ripbasic", "match": ";" }
+      ]
+    }
+  }
+}
