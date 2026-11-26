@@ -412,6 +412,53 @@ PRINT GetRate()
 	}
 }
 
+func checkFileWithImports(t *testing.T, entryPath string) diag.List {
+	t.Helper()
+	absEntry, err := filepath.Abs(entryPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	baseDir := filepath.Dir(absEntry)
+	seen := map[string]bool{}
+	var files []*ast.File
+
+	var load func(absPath string)
+	load = func(absPath string) {
+		key := strings.ToLower(filepath.Clean(absPath))
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		src, err := os.ReadFile(absPath)
+		if err != nil {
+			t.Fatalf("read %s: %v", absPath, err)
+		}
+		rel, err := filepath.Rel(baseDir, absPath)
+		if err != nil {
+			rel = filepath.Base(absPath)
+		}
+		name := filepath.ToSlash(rel)
+		toks, mode, lds := lexer.Lex(name, src)
+		if lds.HasErrors() {
+			t.Fatalf("unexpected lex errors for %s: %v", name, lds)
+		}
+		f, pds := parser.Parse(name, toks, mode)
+		if pds.HasErrors() {
+			t.Fatalf("unexpected parse errors for %s: %v", name, pds)
+		}
+		for _, imp := range f.Imports {
+			if imp.FromGo {
+				continue
+			}
+			target := filepath.Clean(filepath.Join(filepath.Dir(absPath), filepath.FromSlash(imp.Path)))
+			load(target)
+		}
+		files = append(files, f)
+	}
+	load(absEntry)
+	return Check(&ast.Program{Entry: filepath.Base(absEntry), Files: files})
+}
+
 func TestCheckAllGoldenAndExamples(t *testing.T) {
 	roots := []string{
 		filepath.Join("..", "..", "..", "testdata", "golden", "structured"),
@@ -429,11 +476,7 @@ func TestCheckAllGoldenAndExamples(t *testing.T) {
 			}
 			count++
 			t.Run(filepath.ToSlash(p), func(t *testing.T) {
-				src, err := os.ReadFile(p)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if ds := checkSrc(t, filepath.Base(p), string(src)); len(ds) > 0 {
+				if ds := checkFileWithImports(t, p); len(ds) > 0 {
 					t.Fatalf("unexpected check diagnostics: %v", ds)
 				}
 			})

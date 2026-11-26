@@ -31,4 +31,4 @@ Every track starts from the branch `phase3-seams`, which added:
 7. **Don't tick boxes in `tasks.md`**; they're ticked at Phase 3 closeout.
 
 ## Merge order
-`phase3-seams` → Tracks **K** (`3.7`), **H** (`3.3`), **G** (`3.1`+`3.2`), **I** (`3.4`), **J** (`3.5`), and **Kiro `3.6`** into `main` (in any order — file sets are disjoint), followed by full integration verification against `examples/invoicing/` and `go test -p 1 -timeout 20m ./...`.
+`phase3-seams` (merged, #20) → Kiro **L** (`3.6`, merged, #21) → Kiro **K** (`3.7`, merged, #22) → Kiro **H** (`3.3`, merged, #23) → Track **G** (`3.1`+`3.2`, merged, #24) → Track **I** (`3.4`, merged, #25) → Track **J** (`3.5`, merged, #26) → `phase3-closeout` (#27) into `main`, with all Phase 3 tasks (`3.1`–`3.7`) complete.

@@ -65,20 +65,20 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
 
 ## Phase 3 — Data & modules (Mon 30 Nov – Tue 1 Dec)
 
-- [ ] 3.1 `P0` DBCONNECT, SQL/SQLONE/SQLEXEC for pgx and modernc SQLite; `$n` placeholders on both; NUMERIC → DECIMAL
+- [x] 3.1 `P0` DBCONNECT, SQL/SQLONE/SQLEXEC for pgx and modernc SQLite; `$n` placeholders on both; NUMERIC → DECIMAL
   - `rt/db.go`
   - _Requirements: 9.1–9.3, 9.7_
-- [ ] 3.2 `P0` TRANSACTION block bound to `Ctx`, with commit/rollback semantics
+- [x] 3.2 `P0` TRANSACTION block bound to `Ctx`, with commit/rollback semantics
   - _Requirements: 9.5_
-- [ ] 3.3 `P0` `rip migrate`
+- [x] 3.3 `P0` `rip migrate` · **[Kiro]**
   - _Requirements: 9.6_
-- [ ] 3.4 `P0` IMPORT/EXPORT between `.bas` files, resolution, export checks
+- [x] 3.4 `P0` IMPORT/EXPORT between `.bas` files, resolution, export checks
   - _Requirements: 5.1–5.3_
-- [ ] 3.5 `P0` IMPORT FROM GO: go/packages loading, typed call conversion, error results, `context.Context` injection, Host values, `NEW()`
+- [x] 3.5 `P0` IMPORT FROM GO: go/packages loading, typed call conversion, error results, `context.Context` injection, Host values, `NEW()`
   - _Requirements: 5.4–5.7; design §4.10_
-- [ ] 3.6 `P1` SQL injection compile warning · **[Kiro]**
+- [x] 3.6 `P1` SQL injection compile warning · **[Kiro]**
   - _Requirements: 9.4_
-- [ ] 3.7 `P1` FETCH with timeout
+- [x] 3.7 `P1` FETCH with timeout · **[Kiro]**
   - _Requirements: 11.1_
 
 ## Phase 4 — CLI & tests (Tue 1 Dec)

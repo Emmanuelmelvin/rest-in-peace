@@ -126,6 +126,7 @@ var validRuntimeKinds = map[string]bool{
 	string(rt.KindUndefined):          true,
 	string(rt.KindUser):               true,
 	string(rt.KindHTTP):               true,
+	string(rt.KindDatabase):           true,
 	string(rt.KindGo):                 true,
 	string(rt.KindEternalLoop):        true,
 	string(rt.KindExpectFailed):       true,

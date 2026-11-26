@@ -203,13 +203,12 @@ func TestDiagnostics(t *testing.T) {
 		{"USE", structured("d.bas", &ast.UseStmt{At: at(1), Fn: id("Auth")}), diag.Undefined, "no FUNCTION or SUB named AUTH for USE", 1},
 		{"TRY in classic mode", classic("d.bas", ln(10, 1, &ast.TryStmt{At: at(1), CatchVar: "E"})), diag.Syntax, "TRY … CATCH only works in structured mode", 1},
 		{"THROW a STRING", structured("d.bas", &ast.ThrowStmt{At: at(1), Value: str1}), diag.TypeMismatch, "THROW needs an error", 1},
-		{"DBCONNECT", structured("d.bas", &ast.DBConnectStmt{At: at(1), URL: str1}), diag.NotImplemented, "task 3.1", 1},
-		{"TRANSACTION", structured("d.bas", &ast.TransactionStmt{At: at(1)}), diag.NotImplemented, "task 3.2", 1},
+		{"classic TRANSACTION", classic("d.bas", ln(10, 1, &ast.TransactionStmt{At: at(1)})), diag.Syntax, "TRANSACTION only works in structured mode", 1},
 		{"TEST", structured("d.bas", &ast.TestDecl{At: at(1), Name: "t"}), diag.NotImplemented, "task 4.2", 1},
 		{"EXPECT", structured("d.bas", &ast.ExpectStmt{At: at(1), Cond: boolean(true)}), diag.NotImplemented, "task 4.2", 1},
 		{"SHARED DIM", structured("d.bas", &ast.DimStmt{At: at(2), Name: "X", Shared: true}), diag.NotImplemented, "task 4.3", 2},
 		{"later built-in", structured("d.bas", pr(4, call("REQUEST", str("GET"), str("/")))), diag.NotImplemented, "REQUEST is not built yet (task 4.2", 4},
-		{"method call", structured("d.bas", do(1, &ast.CallExpr{Fn: mem(id("uuid"), "NewString")})), diag.NotImplemented, "task 3.5", 1},
+		{"method call on undefined var", structured("d.bas", do(1, &ast.CallExpr{Fn: mem(id("uuid"), "NewString")})), diag.Undefined, "no variable named UUID", 1},
 		{"classic ROUTE GOSUB", classic("d.bas", ln(10, 1, &ast.RouteStmt{At: at(1), Method: "GET", Path: "/", GosubLine: 100}), ln(20, 2, end(2))), diag.Undefined, "there is no line 100", 1},
 		{"GOTO in structured mode", structured("d.bas", pr(1, str("HELLO")), gotoS(2, 10)), diag.Syntax, "GOTO only works in classic mode; add line numbers, or use a loop or a FUNCTION", 2},
 		{"GOSUB in structured mode", structured("d.bas", gosub(2, 10)), diag.Syntax, "GOSUB only works in classic mode", 2},
@@ -223,8 +222,8 @@ func TestDiagnostics(t *testing.T) {
 		{"assigning a CONST", structured("d.bas", cnst(1, "K", num(1)), let(2, id("K"), num(2))), diag.Syntax, "K is a CONST", 2},
 		{"GOTO to a missing line", classic("d.bas", ln(10, 1, gotoS(1, 99))), diag.Undefined, "there is no line 99", 1},
 		{"FUNCTION in classic mode", classic("d.bas", ln(10, 1, function(1, "F", nil, ""))), diag.Syntax, "only work in structured mode", 1},
-		{"IMPORT", &ast.Program{Entry: "d.bas", Files: []*ast.File{{Name: "d.bas", Imports: []*ast.Import{{At: at(1), Path: "./x.bas"}}}}}, diag.NotImplemented, "task 3.4", 1},
-		{"IMPORT FROM GO", &ast.Program{Entry: "d.bas", Files: []*ast.File{{Name: "d.bas", Imports: []*ast.Import{{At: at(1), Path: "github.com/google/uuid", FromGo: true}}}}}, diag.NotImplemented, "task 3.5", 1},
+		{"IMPORT missing file", &ast.Program{Entry: "d.bas", Files: []*ast.File{{Name: "d.bas", Imports: []*ast.Import{{At: at(1), Path: "./x.bas"}}}}}, diag.Undefined, "cannot find imported file", 1},
+		{"IMPORT FROM GO empty path", &ast.Program{Entry: "d.bas", Files: []*ast.File{{Name: "d.bas", Imports: []*ast.Import{{At: at(1), Path: "", FromGo: true}}}}}, diag.Syntax, "non-empty Go package path", 1},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
