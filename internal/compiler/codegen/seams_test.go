@@ -9,10 +9,9 @@ import (
 	"github.com/Emmanuelmelvin/rest-in-peace/internal/compiler/token"
 )
 
-// The seams for the Kiro tasks 2.4 and 2.5 (.kiro/steering/structure.md):
-// LOG, ENV, DECIMAL and ROUND compile, and run through the functions in
-// rt/log.go, rt/env.go and rt/decimal.go. Until task 2.5 fills in
-// rt/decimal.go, DECIMAL values fail at run time with a "not built yet" error.
+// The seams for the Kiro tasks 2.4, 2.5, and 2.3b/2.7b (.kiro/steering/structure.md):
+// LOG, ENV, DECIMAL, ROUND and built-in middleware compile and run through
+// rt/log.go, rt/env.go, rt/decimal.go and rt/middleware.go.
 
 func TestLogAndEnv(t *testing.T) {
 	r := runProgram(t, structured("seams.bas",
@@ -42,29 +41,20 @@ func TestLogAndEnv(t *testing.T) {
 }
 
 func TestDecimalSeams(t *testing.T) {
-	// DIM AS DECIMAL compiles to a native rt.Decimal with a zero value.
+	// DIM AS DECIMAL compiles to a native rt.Decimal; DECIMAL() and ROUND()
+	// work end to end now that Kiro task 2.5 is merged.
 	r := runProgram(t, structured("dec.bas",
-		dim(1, "price", "DECIMAL", nil),
-		pr(2, str("COMPILED")),
+		dim(1, "price", "DECIMAL", call("DECIMAL", str("19.99"))),
+		pr(2, bin(id("price"), token.Plus, call("DECIMAL", str("0.01")))),
+		pr(3, call("ROUND", call("DECIMAL", str("2.345")), num(2))),
+		pr(4, call("ROUND", flt("1.5"), num(0))),
 	))
-	if r.exit != 0 || r.stdout != "COMPILED\n" {
+	if r.exit != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", r.exit, r.stdout, r.stderr)
 	}
-
-	for _, c := range []struct {
-		name string
-		x    ast.Expr
-		want string
-	}{
-		{"DECIMAL()", call("DECIMAL", str("19.99")), "DECIMAL is not built yet (task 2.5"},
-		{"ROUND()", call("ROUND", flt("1.5"), num(0)), "ROUND is not built yet (task 2.5"},
-	} {
-		t.Run(c.name, func(t *testing.T) {
-			r := runProgram(t, structured("dec.bas", pr(1, c.x)))
-			if r.exit == 0 || !strings.Contains(r.stderr, c.want) || !strings.Contains(r.stderr, "dec.bas:1") {
-				t.Errorf("exit %d, stderr %q; want an error containing %q at dec.bas:1", r.exit, r.stderr, c.want)
-			}
-		})
+	want := "20.00\n2.35\n2\n"
+	if r.stdout != want {
+		t.Errorf("stdout = %q, want %q", r.stdout, want)
 	}
 }
 

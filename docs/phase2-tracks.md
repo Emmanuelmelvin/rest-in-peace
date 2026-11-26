@@ -30,6 +30,6 @@ Every track starts from the branch `phase2-seams`, which added:
 `phase2-seams` (merged, #8) → E (merged, #9) → D (merged, #10) → F (merged, #11) into `main`, then all 20 Wave 1 HTTP golden programs passed end to end (with the 2 Wave 2 goldens `middleware` and `route_group` compiling cleanly and skipping on `NOT IMPLEMENTED`).
 
 ## Wave 2 (after the merge)
-- **USE middleware plumbing + ROUTE GROUP** (done): `rt/app.go`, `rt/ctx.go`, `rt/request.go`, `internal/compiler/codegen/{http,expr,classic}.go`, `internal/compiler/check/http.go`, plus Kiro seams in `rt/middleware.go` and `github.com/golang-jwt/jwt/v5` in `go.mod` / `internal/build/deps.go`.
-- **Built-in middleware (Kiro)**: `APIKEY`, `CORS`, `REQUESTLOG` (task 2.3) and `RATELIMIT`, `BEARERJWT` (task 2.7) in `rt/middleware.go` and `rt/middleware_test.go`.
-- **Runtime type checks (task 2.8)**: `AS <TYPE>` checks on dynamic boundaries (`rt/convert.go`, `internal/compiler/codegen/`).
+- **USE middleware plumbing + ROUTE GROUP + Kiro seams** (merged, #13): `rt/app.go`, `rt/ctx.go`, `rt/request.go`, `internal/compiler/codegen/{http,expr,classic}.go`, `internal/compiler/check/http.go`, `rt/middleware.go`, `go.mod`, `internal/build/deps.go`. Both Wave 2 HTTP goldens (`middleware`, `route_group`) passed end to end (**22 / 22** HTTP goldens).
+- **Runtime type checks (task 2.8)** (merged, #14): `AS <TYPE>` checks on dynamic boundaries (`rt/convert.go`, `internal/compiler/codegen/`), plus `typed_boundaries` and `type_mismatch_map` goldens.
+- **Kiro tasks** (merged): 2.5 DECIMAL (#15), 2.4 ENV/LOG/redaction (#16), and 2.3b/2.7b built-in middleware `APIKEY`, `CORS`, `REQUESTLOG`, `RATELIMIT`, `BEARERJWT` (#17). All Phase 2 tasks (`2.1`–`2.9`) are complete.
