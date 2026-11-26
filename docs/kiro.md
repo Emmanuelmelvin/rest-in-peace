@@ -8,7 +8,7 @@ REST in Peace was built with two tools, and this document is upfront about which
 
 | Built with | What |
 |---|---|
-| **Kiro** | Tasks 2.4 (ENV, LOG, redaction), 2.5 (DECIMAL), 3.6 (SQL injection warning) and 5.4 (playground CRT theme and samples), plus the spec-driven workflow: the `.kiro/` specs, steering and hooks that every task follows |
+| **Kiro** | Tasks 2.3b/2.7b (built-in middleware: APIKEY, CORS, REQUESTLOG, RATELIMIT, BEARERJWT), 2.4 (ENV, LOG, redaction), 2.5 (DECIMAL), 3.6 (SQL injection warning) and 5.4 (playground CRT theme and samples), plus the spec-driven workflow: the `.kiro/` specs, steering and hooks that every task follows |
 | **Claude Code** | Everything else: the compiler (lexer, parser, Go codegen), runtime, HTTP, database, CLI, playground backend, and the scaffold and specs themselves |
 
 The two never edit the same files. Ownership is listed in `.kiro/steering/structure.md`, and the git history shows it.
@@ -38,6 +38,13 @@ Fill in one section per task as you do it.
 - **What `security.md` changed in the output** (e.g. redaction): Drove recursive redaction for all five secret key patterns (`password`, `token`, `apiKey`, `authorization`, `secret`, case-insensitive) across top-level fields, nested `*rt.Map`, `*rt.Array`, `map[string]any`, and `[]any` at arbitrary depth, while rendering `*Map`, `*Array`, and `Decimal` cleanly as JSON via `json.RawMessage` and adding thread-safe `SetLogOutput(w io.Writer)` for testing and log redirection.
 - **What the hooks / tests caught:** `gofmt` flagged `rt/log_test.go` and `go vet ./...` caught a missing `fmt` import in `rt/log.go`; Kiro fixed both and verified all 86 `rt` tests passing (`go test -count=1 ./rt/...`).
 - **What I changed by hand, and why:** Nothing in Kiro's files — committed verbatim as `81728f7`. Follow-ups for non-Kiro files: wire `rt.SetLogOutput` (or stdout capture) in `internal/playground` for SSE log streaming (Req 10.4), and ensure `.env` dev loading is wired in `internal/cli/` for `rip dev` / `rip run` (Req 10.2).
+
+### 2.3b / 2.7b Built-in middleware (APIKEY, CORS, REQUESTLOG, RATELIMIT, BEARERJWT)
+- **Date:** 2026-11-26
+- **How it started:** `kiro-cli` (v3.6.2) headless session on branch `kiro/task-2.3-2.7-middleware` in a dedicated worktree off `main` after PR #13 added the `rt/middleware.go` seams and `Ctx.SetResponseHeader` / `Ctx.OnFinish` / `Request.RemoteAddr` hooks.
+- **What the spec and steering contributed:** `requirements.md` (Requirement 8.1–8.3) and `security.md` drove constant-time API key comparison (without leaking key length), explicit HS256-only JWT verification with `WithExpirationRequired()` and `*jwt.SigningMethodHMAC` assertion, per-IP 60s sliding-window rate limiting with fail-fast startup validation, CORS header injection across error responses + `OPTIONS` 204 preflight, and post-response `REQUESTLOG` via `OnFinish`. `structure.md` kept edits strictly inside `rt/middleware.go` and `rt/middleware_test.go`.
+- **What the hooks / tests caught:** `go vet` caught an unused test variable and `gofmt` caught struct-field alignment in `rt/middleware.go`; Kiro fixed both and verified all 25+ new middleware tests passing in `go test -count=1 ./rt/...`.
+- **What I changed by hand, and why:** Nothing in Kiro's files — committed verbatim as `16a7540` and merged in PR #17.
 
 ### 3.6 SQL injection warning
 - **Date:**
