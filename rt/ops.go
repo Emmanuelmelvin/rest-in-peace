@@ -161,6 +161,9 @@ func Neg(a Value) Value {
 	case float64:
 		return -x
 	}
+	if r, ok := decimalNeg(a); ok {
+		return r
+	}
 	panic(Errorf(KindTypeMismatch, "cannot use - on a %s", TypeName(a)))
 }
 
@@ -181,6 +184,9 @@ func Concat(a, b Value) string { return ToString(a) + ToString(b) }
 
 // Eq implements = in expressions.
 func Eq(a, b Value) bool {
+	if cmp, ok := decimalCompare(a, b); ok {
+		return cmp == 0
+	}
 	if ai, af, aInt, ok := num(a); ok {
 		if bi, bf, bInt, ok2 := num(b); ok2 {
 			if aInt && bInt {
@@ -200,12 +206,15 @@ func Eq(a, b Value) bool {
 		y, ok := b.(bool)
 		return ok && x == y
 	}
-	// TODO(task 2.5): DECIMAL. Maps and arrays compare by identity for now.
+	// Maps and arrays compare by identity.
 	return a == b
 }
 
 // Lt implements <. The other comparisons are built from Lt and Eq.
 func Lt(a, b Value) bool {
+	if cmp, ok := decimalCompare(a, b); ok {
+		return cmp < 0
+	}
 	ai, af, aInt, aok := num(a)
 	bi, bf, bInt, bok := num(b)
 	if aok && bok {
@@ -219,7 +228,7 @@ func Lt(a, b Value) bool {
 			return x < y
 		}
 	}
-	// TODO(task 2.5): DECIMAL and DATE comparisons.
+	// DATE comparisons come with DATE values (no task covers them yet).
 	panic(Errorf(KindTypeMismatch, "cannot compare %s with %s", TypeName(a), TypeName(b)))
 }
 
@@ -239,13 +248,15 @@ func ToString(v Value) string {
 		return strconv.FormatInt(x, 10)
 	case float64:
 		return strconv.FormatFloat(x, 'g', -1, 64)
-	default:
-		b, err := json.Marshal(x)
-		if err != nil {
-			return fmt.Sprint(x)
-		}
-		return string(b)
 	}
+	if s, ok := decimalString(v); ok {
+		return s
+	}
+	b, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Sprint(v)
+	}
+	return string(b)
 }
 
 // Print implements PRINT with default newline termination.
@@ -301,7 +312,9 @@ func arith(op byte, a, b Value) Value {
 	ai, af, aInt, aok := num(a)
 	bi, bf, bInt, bok := num(b)
 	if !aok || !bok {
-		// TODO(task 2.5): DECIMAL operands and DECIMAL/NUMBER mixing.
+		if r, ok := decimalArith(op, a, b); ok {
+			return r
+		}
 		panic(Errorf(KindTypeMismatch, "cannot use %c on %s and %s", op, TypeName(a), TypeName(b)))
 	}
 	if op == '/' {

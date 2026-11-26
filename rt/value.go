@@ -14,8 +14,8 @@ import (
 )
 
 // Value is any dynamic BASIC value. Allowed dynamic types (design §4.2):
-// nil, bool, int64, float64, string, time.Time, *Map, *Array, and later
-// decimal (task 2.5) and Host values from Go interop (task 3.5).
+// nil, bool, int64, float64, string, Decimal (decimal.go), time.Time, *Map,
+// *Array, and later Host values from Go interop (task 3.5).
 // Typed declarations (DIM x AS INTEGER) compile to native Go types instead.
 type Value = any
 
@@ -106,7 +106,7 @@ func (m *Map) MarshalJSON() ([]byte, error) {
 		}
 		buf.Write(kb)
 		buf.WriteByte(':')
-		vb, err := json.Marshal(m.vals[k])
+		vb, err := marshalValue(m.vals[k])
 		if err != nil {
 			return nil, err
 		}
@@ -137,10 +137,29 @@ func (a *Array) MarshalJSON() ([]byte, error) {
 	if a == nil {
 		return []byte("null"), nil
 	}
-	if a.Items == nil {
-		return []byte("[]"), nil
+	var buf bytes.Buffer
+	buf.WriteByte('[')
+	for i, v := range a.Items {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		vb, err := marshalValue(v)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(vb)
 	}
-	return json.Marshal(a.Items)
+	buf.WriteByte(']')
+	return buf.Bytes(), nil
+}
+
+// marshalValue encodes one map or array element as JSON. DECIMALs keep their
+// scale (decimalJSON in decimal.go); everything else uses encoding/json.
+func marshalValue(v Value) ([]byte, error) {
+	if b, ok := decimalJSON(v); ok {
+		return b, nil
+	}
+	return json.Marshal(v)
 }
 
 // Get implements member access v.name (Requirements 1.5 and 3.8). A missing
@@ -286,6 +305,8 @@ func TypeName(v Value) string {
 		return "ARRAY"
 	case time.Time:
 		return "DATE"
+	case Decimal:
+		return "DECIMAL"
 	default:
 		return fmt.Sprintf("GO %T", v)
 	}

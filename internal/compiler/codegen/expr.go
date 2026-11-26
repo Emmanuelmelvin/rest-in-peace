@@ -20,38 +20,52 @@ type gexpr struct {
 
 var bad = gexpr{code: "nil", t: tAny}
 
-// builtin is a Phase 1 built-in function implemented in rt/builtins.go.
+// builtin is a built-in function implemented in rt.
 type builtin struct {
 	fn       string
 	min, max int
 	t        typ
+	ctx      bool  // pass c *rt.Ctx as the first argument
+	args     []typ // Go types of the leading parameters; the rest are rt.Value
 }
 
 var builtins = map[string]builtin{
-	"LEN":   {"rt.Len", 1, 1, tInt},
-	"UPPER": {"rt.Upper", 1, 1, tStr},
-	"LOWER": {"rt.Lower", 1, 1, tStr},
-	"TRIM":  {"rt.Trim", 1, 1, tStr},
-	"LEFT":  {"rt.Left", 2, 2, tStr},
-	"RIGHT": {"rt.Right", 2, 2, tStr},
-	"MID":   {"rt.Mid", 2, 3, tStr},
-	"STR":   {"rt.Str", 1, 1, tStr},
-	"VAL":   {"rt.Val", 1, 1, tAny},
-	"INT":   {"rt.Int", 1, 1, tInt},
-	"ABS":   {"rt.Abs", 1, 1, tAny},
+	// DECIMAL (task 2.5, rt/decimal.go).
+	"DECIMAL": {fn: "rt.DecimalOf", min: 1, max: 1, t: tDec},
+	"ROUND":   {fn: "rt.Round", min: 1, max: 2, t: tAny},
+	// ENV (task 2.4, rt/env.go).
+	"ENV":        {fn: "rt.Env", min: 1, max: 2, t: tAny, args: []typ{tStr}},
+	"ENVREQUIRE": {fn: "rt.EnvRequire", min: 1, max: 1, t: tStr, args: []typ{tStr}},
+	// Classic-mode request helpers (task 2.1, rt/request.go).
+	"PARAM":  {fn: "rt.Param", min: 1, max: 1, t: tAny, ctx: true},
+	"QUERY":  {fn: "rt.Query", min: 1, max: 1, t: tAny, ctx: true},
+	"HEADER": {fn: "rt.Header", min: 1, max: 1, t: tAny, ctx: true},
+	"BODY":   {fn: "rt.Body", min: 0, max: 0, t: tAny, ctx: true},
+	// Error values for THROW (task 2.2, rt/errors.go).
+	"ERROR":     {fn: "rt.NewError", min: 1, max: 1, t: tAny},
+	"HTTPERROR": {fn: "rt.NewHTTPError", min: 2, max: 3, t: tAny},
+
+	// Phase 1 (rt/builtins.go).
+	"LEN":   {fn: "rt.Len", min: 1, max: 1, t: tInt},
+	"UPPER": {fn: "rt.Upper", min: 1, max: 1, t: tStr},
+	"LOWER": {fn: "rt.Lower", min: 1, max: 1, t: tStr},
+	"TRIM":  {fn: "rt.Trim", min: 1, max: 1, t: tStr},
+	"LEFT":  {fn: "rt.Left", min: 2, max: 2, t: tStr},
+	"RIGHT": {fn: "rt.Right", min: 2, max: 2, t: tStr},
+	"MID":   {fn: "rt.Mid", min: 2, max: 3, t: tStr},
+	"STR":   {fn: "rt.Str", min: 1, max: 1, t: tStr},
+	"VAL":   {fn: "rt.Val", min: 1, max: 1, t: tAny},
+	"INT":   {fn: "rt.Int", min: 1, max: 1, t: tInt},
+	"ABS":   {fn: "rt.Abs", min: 1, max: 1, t: tAny},
 }
 
 // laterBuiltins are the language.md built-ins that later tasks add.
 var laterBuiltins = map[string]string{
-	"ROUND": "2.5", "DECIMAL": "2.5",
-	"ENV": "2.4", "ENVREQUIRE": "2.4",
 	"SQL": "3.1", "SQLONE": "3.1", "SQLEXEC": "3.1",
 	"FETCH":   "3.7",
 	"REQUEST": "4.2",
-	"ERROR":   "2.2", "HTTPERROR": "2.2",
-	"NEW":   "3.5",
-	"PARAM": "2.1", "QUERY": "2.1", "HEADER": "2.1", "BODY": "2.1",
-	"CORS": "2.3", "REQUESTLOG": "2.3", "APIKEY": "2.3",
+	"NEW":     "3.5",
+	"CORS":    "2.3", "REQUESTLOG": "2.3", "APIKEY": "2.3",
 	"RATELIMIT": "2.7", "BEARERJWT": "2.7",
 }
 
@@ -179,9 +193,16 @@ func (g *gen) call(e *ast.CallExpr, sc *scope, asStmt bool) gexpr {
 			g.errorf(e.At, diag.Syntax, "%s takes %s, not %d", name, want, len(e.Args))
 			return bad
 		}
-		args := make([]string, len(e.Args))
+		var args []string
+		if b.ctx {
+			args = append(args, "c")
+		}
 		for i, a := range e.Args {
-			args[i] = g.expr(a, sc).code
+			want := tAny
+			if i < len(b.args) {
+				want = b.args[i]
+			}
+			args = append(args, coerce(g.expr(a, sc), want))
 		}
 		return gexpr{b.fn + "(" + strings.Join(args, ", ") + ")", b.t, false}
 	}
@@ -383,6 +404,8 @@ func coerce(x gexpr, want typ) string {
 		return "rt.AsStr(" + x.code + ")"
 	case tBool:
 		return "rt.AsBool(" + x.code + ")"
+	case tDec:
+		return "rt.AsDecimal(" + x.code + ")"
 	}
 	return x.code
 }

@@ -45,6 +45,18 @@ func AsBool(v Value) bool {
 	panic(Errorf(KindTypeMismatch, "expected a BOOLEAN, got %s", TypeName(v)))
 }
 
+// AsMap converts a value used where a MAP is required, such as the fields of
+// LOG level, msg, fields. NIL stays NIL (a nil *Map).
+func AsMap(v Value) *Map {
+	switch m := v.(type) {
+	case nil:
+		return nil
+	case *Map:
+		return m
+	}
+	panic(Errorf(KindTypeMismatch, `expected a MAP like {"key": value}, got %s`, TypeName(v)))
+}
+
 // ForCond reports whether a dynamic FOR loop should run another time: v <= to
 // for a positive (or zero) STEP, v >= to for a negative one.
 func ForCond(v, to, step Value) bool {

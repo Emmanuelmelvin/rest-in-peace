@@ -343,6 +343,7 @@ const (
 	tNum             // float64
 	tStr             // string
 	tBool            // bool
+	tDec             // rt.Decimal; its arithmetic and comparisons go through the rt helpers
 )
 
 func (t typ) goType() string {
@@ -355,6 +356,8 @@ func (t typ) goType() string {
 		return "string"
 	case tBool:
 		return "bool"
+	case tDec:
+		return "rt.Decimal"
 	}
 	return "rt.Value"
 }
@@ -369,6 +372,8 @@ func (t typ) zero() string {
 		return `""`
 	case tBool:
 		return "false"
+	case tDec:
+		return "rt.Decimal{}"
 	}
 	return "nil"
 }
@@ -388,8 +393,7 @@ func (g *gen) typeRef(p token.Pos, ref ast.TypeRef) (typ, string) {
 	case "", "ANY", "MAP", "ARRAY", "DATE", "NIL":
 		return tAny, name
 	case "DECIMAL":
-		g.todo(p, "2.5", "the DECIMAL type")
-		return tAny, name
+		return tDec, name
 	}
 	g.errorf(p, diag.Undefined, "there is no type named %s; use NUMBER, INTEGER, STRING, BOOLEAN, MAP, ARRAY, DECIMAL, DATE, NIL or ANY", ref.Name)
 	return tAny, name

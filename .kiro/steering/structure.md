@@ -33,7 +33,10 @@ The tasks marked **[Kiro]** in `tasks.md` are built in Kiro, and everything else
 | 5.4 CRT theme and samples | `playground/web/src/styles.css`, `playground/web/src/samples.ts` |
 
 - **Claude Code sessions never edit these files**, and never implement these features anywhere else (for example, no DECIMAL arithmetic in `rt/ops.go`).
-- **Seams:** where shared code needs to call into a Kiro file, Claude Code adds a one-line call to a function the Kiro file defines (for example, `rt/ops.go` calls `decimalArith` from `rt/decimal.go`). It ships with a stub body, which Kiro then replaces. The seams are added when Phase 1 is merged, before the Kiro tasks start.
+- **Seams:** where shared code needs to call into a Kiro file, Claude Code adds a one-line call to a function the Kiro file defines (for example, `rt/ops.go` calls `decimalArith` from `rt/decimal.go`). It ships with a stub body, which Kiro then replaces. The seams for tasks 2.4 and 2.5 are in place:
+  - **2.5:** `rt/decimal.go` defines `Decimal` (= `shopspring/decimal.Decimal`) and stubs for `DecimalOf`, `AsDecimal`, `Round`, `decimalArith`, `decimalCompare`, `decimalNeg`, `decimalString` and `decimalJSON`. Each stub's comment names its callers. Codegen compiles `DECIMAL(…)`, `ROUND(…)` and `AS DECIMAL` (a native `rt.Decimal`) to them, and `ops.go` and `value.go` call the hooks for arithmetic, comparisons, `PRINT` and JSON.
+  - **2.4:** codegen compiles `LOG` to `rt.Log(c, level, msg, fields)` (fields is a `*Map` or nil) and `ENV`/`ENVREQUIRE` to `rt.Env`/`rt.EnvRequire` in their current signatures. `PRINT` writes to stdout, which the playground host captures as the program's log. The CLI already loads `.env` for `rip run`.
+  - **3.6** gets its seam (a call from `check.go` into `injection.go`) before Phase 3 starts.
 - **Kiro stays inside its own files too.** If a Kiro task needs a change elsewhere, write it down in `docs/kiro.md` and leave it to be done on the Claude Code side.
 
 ## Rules

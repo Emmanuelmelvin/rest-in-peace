@@ -120,6 +120,10 @@ func (g *gen) collectDecls(stmts []ast.Stmt, sc *scope, add func(kind declKind, 
 				g.collectDecls(c.Body, sc, add)
 			}
 			g.collectDecls(s.Else, sc, add)
+		case *ast.TryStmt:
+			g.collectTry(s, sc, add) // try.go
+		case *ast.TransactionStmt:
+			g.collectDecls(s.Body, sc, add)
 		}
 	}
 }
@@ -296,7 +300,7 @@ func (g *gen) stmt(o *out, s ast.Stmt, sc *scope) {
 		}
 		return // hoisted to package level
 	}
-	if g.simpleStmt(o, s, sc) || g.laterStmt(s) {
+	if g.simpleStmt(o, s, sc) || g.laterStmt(o, s, sc) {
 		return
 	}
 	g.dir(o, s.Pos())
@@ -545,6 +549,14 @@ func (g *gen) simpleStmt(o *out, s ast.Stmt, sc *scope) bool {
 		}
 		g.dir(o, s.At)
 		o.w("rt.Print(", strings.Join(args, ", "), ")")
+	case *ast.LogStmt:
+		lvl, msg := g.expr(s.Level, sc).code, g.expr(s.Msg, sc).code
+		fields := "nil"
+		if s.Fields != nil {
+			fields = "rt.AsMap(" + g.expr(s.Fields, sc).code + ")"
+		}
+		g.dir(o, s.At)
+		o.w("rt.Log(c, ", lvl, ", ", msg, ", ", fields, ")")
 	case *ast.ExprStmt:
 		g.dir(o, s.At)
 		if call, ok := s.X.(*ast.CallExpr); ok {
@@ -586,31 +598,26 @@ func (g *gen) assign(o *out, p token.Pos, target, value ast.Expr, sc *scope) {
 	}
 }
 
-// laterStmt reports statements that later tasks build (tasks.md), so they fail
-// with a clear diagnostic instead of broken Go.
-func (g *gen) laterStmt(s ast.Stmt) bool {
+// laterStmt compiles the statements of later tasks, in both modes. Each
+// group lives in its own file, so the tasks building them don't share code:
+// HTTP in http.go (tasks 2.1, 2.3, 2.6, 2.7) and errors in try.go (task 2.2).
+// Statements that no task has built yet fail with a clear diagnostic instead
+// of broken Go.
+func (g *gen) laterStmt(o *out, s ast.Stmt, sc *scope) bool {
+	switch s := s.(type) {
+	case *ast.RouteStmt, *ast.GroupStmt, *ast.UseStmt, *ast.RespondStmt, *ast.ServeStmt:
+		g.httpStmt(o, s, sc)
+		return true
+	case *ast.ThrowStmt, *ast.TryStmt:
+		g.errorStmt(o, s, sc)
+		return true
+	}
 	task, what := "", ""
 	switch s.(type) {
-	case *ast.ThrowStmt:
-		task, what = "2.2", "THROW"
-	case *ast.TryStmt:
-		task, what = "2.2", "TRY … CATCH"
-	case *ast.RouteStmt:
-		task, what = "2.1", "ROUTE"
-	case *ast.GroupStmt:
-		task, what = "2.7", "ROUTE GROUP"
-	case *ast.UseStmt:
-		task, what = "2.3", "USE"
-	case *ast.RespondStmt:
-		task, what = "2.1", "RESPOND"
-	case *ast.ServeStmt:
-		task, what = "2.1", "SERVE"
 	case *ast.DBConnectStmt:
 		task, what = "3.1", "DBCONNECT"
 	case *ast.TransactionStmt:
 		task, what = "3.2", "TRANSACTION"
-	case *ast.LogStmt:
-		task, what = "2.4", "LOG"
 	case *ast.TestDecl:
 		task, what = "4.2", "TEST"
 	case *ast.ExpectStmt:
