@@ -9,3 +9,10 @@ import "embed"
 //
 //go:embed rt/*.go
 var RuntimeFS embed.FS
+
+// GoMod holds the toolchain's own go.mod. runtimeRequires prefers the module
+// versions from debug.ReadBuildInfo, and falls back to GoMod when build info
+// omits Deps (notably under `go test` on Go 1.24).
+//
+//go:embed go.mod
+var GoMod []byte

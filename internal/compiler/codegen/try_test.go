@@ -203,18 +203,18 @@ func TestTryPrograms(t *testing.T) {
 		byName[c.name] = c
 	}
 	merged := []outCase{
-		merge("t.bas", byName,
+		merge("errors", "t.bas", byName,
 			"THROW ERROR is caught",
 			"runtime errors and Go panics are caught with their kind and line",
 			"a bad THROW or HTTPERROR is itself a catchable error",
 			"HTTPERROR exposes status and details",
 			"the call depth is restored after a caught STACK OVERFLOW"),
-		merge("flow.bas", byName,
+		merge("flow", "flow.bas", byName,
 			"the CATCH variable is local inside a FUNCTION",
 			"RETURN inside TRY and CATCH",
 			"EXIT FOR, WHILE and DO inside TRY and CATCH",
 			"FINALLY can hold a TRY and loops of its own"),
-		merge("nest.bas", byName,
+		merge("nest", "nest.bas", byName,
 			"nested TRY, rethrow and FINALLY order",
 			"END inside TRY skips CATCH and runs FINALLY"),
 	}
@@ -237,8 +237,9 @@ func TestTryPrograms(t *testing.T) {
 }
 
 // merge joins the named cases, in order, into one program in file, and
-// removes them from cases.
-func merge(file string, cases map[string]outCase, names ...string) outCase {
+// removes them from cases. name is kept short so t.TempDir stays well under
+// Linux's 255-byte filename limit.
+func merge(name, file string, cases map[string]outCase, names ...string) outCase {
 	var body []ast.Stmt
 	var stdout string
 	for _, n := range names {
@@ -250,7 +251,7 @@ func merge(file string, cases map[string]outCase, names ...string) outCase {
 		body = append(body, c.prog.Files[0].Body...)
 		stdout += c.stdout
 	}
-	return outCase{name: strings.Join(names, " + "), prog: structured(file, body...), stdout: stdout}
+	return outCase{name: name, prog: structured(file, body...), stdout: stdout}
 }
 
 // Uncaught errors still stop the program with ?KIND ERROR IN file:line — hint.
