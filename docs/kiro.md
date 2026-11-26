@@ -8,7 +8,7 @@ REST in Peace was built with two tools, and this document is upfront about which
 
 | Built with | What |
 |---|---|
-| **Kiro** | Tasks 2.3b/2.7b (built-in middleware: APIKEY, CORS, REQUESTLOG, RATELIMIT, BEARERJWT), 2.4 (ENV, LOG, redaction), 2.5 (DECIMAL), 3.6 (SQL injection warning) and 5.4 (playground CRT theme and samples), plus the spec-driven workflow: the `.kiro/` specs, steering and hooks that every task follows |
+| **Kiro** | Tasks 2.3b/2.7b (built-in middleware: APIKEY, CORS, REQUESTLOG, RATELIMIT, BEARERJWT), 2.4 (ENV, LOG, redaction), 2.5 (DECIMAL), 3.3 (`rip migrate`), 3.6 (SQL injection warning), 3.7 (`FETCH`), and 5.4 (playground CRT theme and samples), plus the spec-driven workflow: the `.kiro/` specs, steering and hooks that every task follows |
 | **Claude Code** | Everything else: the compiler (lexer, parser, Go codegen), runtime, HTTP, database, CLI, playground backend, and the scaffold and specs themselves |
 
 The two never edit the same files. Ownership is listed in `.kiro/steering/structure.md`, and the git history shows it.
@@ -47,10 +47,26 @@ Fill in one section per task as you do it.
 - **What I changed by hand, and why:** Nothing in Kiro's files — committed verbatim as `16a7540` and merged in PR #17.
 
 ### 3.6 SQL injection warning
-- **Date:**
-- **How it started:**
-- **The `rip check` hook in action** (a warning firing on save):
-- **What I changed by hand, and why:**
+- **Date:** 2026-11-26
+- **How it started:** `kiro-cli` (v3.6.2) headless session on branch `kiro/task-3.6-injection` in a dedicated worktree off `phase3-seams` (PR #20 wired `checkSQLInjection(p)` in `check.go`).
+- **What the spec and steering contributed:** `requirements.md` (Requirement 9.4) and `security.md` drove per-file taint propagation from `req.*` (structured mode) and `PARAM`/`QUERY`/`HEADER`/`BODY` (classic mode) across transitive `LET`/`DIM` assignments and string built-ins (`TRIM`, `UPPER`, `LOWER`, `LEFT`, `RIGHT`, `MID`, `STR`), warning with `?INJECTION RISK WARNING IN <file>:<line> — use $1 placeholders` only on `+`/`&` concatenation while leaving safe parameterized queries and literal concatenations clean and keeping `HasErrors() == false`.
+- **What the hooks / tests caught:** Initial test run caught `classic_transitive_param` because each classic line got a fresh `taintEnv`; Kiro switched classic mode to a single file-wide `taintEnv` (matching classic BASIC's global variable scope) and verified all 43 new injection tests plus the full `check` suite, `gofmt`, and `go vet`.
+- **What I changed by hand, and why:** Nothing in Kiro's files — merged verbatim in PR #21.
+- **The `rip check` hook in action** (a warning firing on save): *To capture*
+
+### 3.7 Outbound HTTP (`FETCH`)
+- **Date:** 2026-11-26
+- **How it started:** `kiro-cli` (v3.6.2) headless session on branch `kiro/task-3.7-fetch` in a dedicated worktree off `phase3-seams` (which wired `FETCH` in `codegen/expr.go` to `rt.Fetch`).
+- **What the spec and steering contributed:** `requirements.md` (Requirement 11.1–11.2) and `security.md` guided options validation (`method`, `headers`, `body` with JSON auto-encoding, `timeout` default 10s layered over `c.Context()`), 1 MB response cap via `io.LimitReader`, a `fetchDialer` hook ready for task 5.3's playground SSRF guard, lowercase response headers, JSON auto-decoding, and catchable `*rt.Error` (`KindHTTP`) on timeouts/cancellations/network errors.
+- **What the hooks / tests caught:** All 23 `httptest.NewServer` tests in `rt/fetch_test.go`, the full `rt` suite, `gofmt`, and `go vet` passed on the first run.
+- **What I changed by hand, and why:** Nothing in Kiro's files — merged verbatim in PR #22.
+
+### 3.3 `rip migrate`
+- **Date:** 2026-11-26
+- **How it started:** `kiro-cli` (v3.6.2) headless session on branch `kiro/task-3.3-migrate` in a dedicated worktree off `phase3-seams` (with `pgx/v5` and `modernc.org/sqlite` already pinned in `go.mod`).
+- **What the spec and steering contributed:** `requirements.md` (Requirement 9.6 & 13) drove `.env` + `DATABASE_URL` resolution with classic `?CONFIG ERROR` when unset, Postgres (`pgx.Connect`) and SQLite (`modernc.org/sqlite` with `splitSQL` for multi-statement files) drivers, `_rip_migrations` tracking, lexicographical ordering of `migrations/*.sql`, per-file transactions with rollback on failure, and `internal/build/migrations.go` wired from `internal/cli/build.go`.
+- **What the hooks / tests caught:** `go vet` flagged an undefined helper (`splitSQLStatements`) in `migrate_test.go`. The real cause was an orchestration mistake, not Kiro: two `kiro-cli` sessions were accidentally launched on the same worktree for about 13 minutes, and the second one rewrote `migrate.go` (renaming the helper to `splitSQL`) under the first. The duplicate session was killed. The remaining session then aligned the test, rebuilt, and verified all 13 tests in `internal/cli/migrate_test.go`, plus `gofmt` and `go vet`, before committing.
+- **What I changed by hand, and why:** Nothing in Kiro's files — merged verbatim in PR #23.
 
 ### 5.4 Playground CRT theme and samples
 - **Date:**

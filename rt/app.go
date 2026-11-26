@@ -170,10 +170,8 @@ func (a *App) Serve(port Value) {
 }
 
 // OnShutdown registers f to run after the server has stopped and every
-// in-flight request has finished (Requirement 14.5).
-//
-// TODO(task 3.1): DBCONNECT registers each pool's Close here, so that a
-// graceful shutdown closes the database pools.
+// in-flight request has finished (Requirement 14.5). DBConnect registers
+// each database pool's Close here so graceful shutdown closes pools cleanly.
 func (a *App) OnShutdown(f func()) {
 	a.shutdownMu.Lock()
 	a.onShutdown = append(a.onShutdown, f)
