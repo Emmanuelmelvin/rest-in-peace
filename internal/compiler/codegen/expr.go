@@ -65,14 +65,13 @@ var laterBuiltins = map[string]string{
 	"FETCH":   "3.7",
 	"REQUEST": "4.2",
 	"NEW":     "3.5",
-	"CORS":    "2.3", "REQUESTLOG": "2.3", "APIKEY": "2.3",
-	"RATELIMIT": "2.7", "BEARERJWT": "2.7",
 }
 
 func isBuiltin(name string) bool {
 	_, ok := builtins[name]
 	_, later := laterBuiltins[name]
-	return ok || later || name == "NOW"
+	_, mw := middlewareFactories[name]
+	return ok || later || mw || name == "NOW"
 }
 
 // lookup finds a variable or constant visible in sc.
@@ -205,6 +204,10 @@ func (g *gen) call(e *ast.CallExpr, sc *scope, asStmt bool) gexpr {
 			args = append(args, coerce(g.expr(a, sc), want))
 		}
 		return gexpr{b.fn + "(" + strings.Join(args, ", ") + ")", b.t, false}
+	}
+	if _, ok := middlewareFactories[name]; ok {
+		g.errorf(e.At, diag.Syntax, "%s is a middleware built-in; register it with USE %s(…)", name, name)
+		return bad
 	}
 	if task, ok := laterBuiltins[name]; ok {
 		g.todo(e.At, task, name)

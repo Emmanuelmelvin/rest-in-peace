@@ -521,12 +521,10 @@ func (c *checker) checkStmt(s ast.Stmt) {
 		c.checkRoute(st)
 
 	case *ast.GroupStmt:
-		for _, r := range st.Routes {
-			c.checkStmt(r)
-		}
+		c.checkGroup(st)
 
 	case *ast.UseStmt:
-		c.checkExpr(st.Fn)
+		c.checkUse(st)
 
 	case *ast.RespondStmt:
 		c.checkExpr(st.Status)

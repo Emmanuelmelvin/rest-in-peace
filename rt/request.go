@@ -14,14 +14,15 @@ import (
 
 // Request is the parsed HTTP request (Requirement 7.2).
 type Request struct {
-	ID      string
-	Method  string
-	Path    string
-	Params  *Map
-	Query   *Map
-	Headers *Map  // lowercase keys
-	Body    Value // parsed JSON; an empty map when there is no body
-	Ctx     *Map  // written by middleware
+	ID         string
+	Method     string
+	Path       string
+	RemoteAddr string // client host:port from net/http, used by RATELIMIT
+	Params     *Map
+	Query      *Map
+	Headers    *Map  // lowercase keys
+	Body       Value // parsed JSON; an empty map when there is no body
+	Ctx        *Map  // written by middleware
 }
 
 // Value returns the request as the BASIC map passed to structured handlers.

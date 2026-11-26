@@ -19,6 +19,10 @@ type Ctx struct {
 	gosub    []int // classic mode: this request's GOSUB return stack
 	app      *App
 
+	respHeaders map[string]string
+	respOrder   []string
+	onFinish    []func(status int)
+
 	// Req is the current request, or nil outside a request.
 	Req *Request
 
@@ -40,6 +44,34 @@ func (c *Ctx) App() *App {
 		c.app = NewApp("")
 	}
 	return c.app
+}
+
+// SetResponseHeader adds or replaces a response header for the current request
+// (used by CORS and other middleware). Explicit headers passed to RESPOND
+// override headers set here.
+func (c *Ctx) SetResponseHeader(name, value string) {
+	if c.respHeaders == nil {
+		c.respHeaders = map[string]string{}
+	}
+	if _, exists := c.respHeaders[name]; !exists {
+		c.respOrder = append(c.respOrder, name)
+	}
+	c.respHeaders[name] = value
+}
+
+// OnFinish registers f to run after the HTTP response has been written,
+// receiving the final HTTP status code (used by REQUESTLOG). Callbacks run
+// in LIFO order.
+func (c *Ctx) OnFinish(f func(status int)) {
+	if f != nil {
+		c.onFinish = append(c.onFinish, f)
+	}
+}
+
+func (c *Ctx) runOnFinish(status int) {
+	for i := len(c.onFinish) - 1; i >= 0; i-- {
+		c.onFinish[i](status)
+	}
 }
 
 // Context returns the Go context, which Go interop passes to context.Context parameters.

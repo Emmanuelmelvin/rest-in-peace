@@ -48,7 +48,7 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
   - _Requirements: 7.1–7.6, 7.8, 7.9_
 - [x] 2.2 `P0` TRY/CATCH/FINALLY, THROW, HTTPERROR, the RESPOND signal, panic-to-response mapping with request IDs
   - _Requirements: 6.1–6.7_
-- [ ] 2.3 `P0` USE middleware with path scoping; APIKEY, CORS, REQUESTLOG
+- [ ] 2.3 `P0` USE middleware with path scoping (done); APIKEY, CORS, REQUESTLOG · **[Kiro: `rt/middleware.go`]**
   - _Requirements: 8.1–8.3_
 - [ ] 2.4 `P0` ENV/ENVREQUIRE, `.env` in dev, LOG via slog with redaction, PRINT · **[Kiro]**
   - _Requirements: 10.1–10.5_
@@ -56,7 +56,7 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
   - _Requirements: 3.7_
 - [x] 2.6 `P0` Classic per-request GOSUB stack and per-program mutex
   - _Requirements: 7.10_
-- [ ] 2.7 `P1` ROUTE GROUP, RATELIMIT, BEARERJWT
+- [ ] 2.7 `P1` ROUTE GROUP (done); RATELIMIT, BEARERJWT · **[Kiro: `rt/middleware.go`]**
   - _Requirements: 7.7, 8.3_
 - [ ] 2.8 `P1` Runtime type checks for `AS <TYPE>` on dynamic boundaries
   - _Requirements: 3.2_
