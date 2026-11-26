@@ -1,0 +1,10 @@
+zero = 0
+TRY
+  PRINT 1 / zero
+CATCH e
+  PRINT "CAUGHT "; e.kind
+  THROW e
+FINALLY
+  PRINT "FINALLY"
+END TRY
+PRINT "NEVER"

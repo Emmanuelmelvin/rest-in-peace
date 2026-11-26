@@ -1,0 +1,5 @@
+10 TRY
+20   PRINT 1
+30 CATCH e
+40   PRINT e.message
+50 END TRY
