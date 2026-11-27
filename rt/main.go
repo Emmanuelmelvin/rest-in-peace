@@ -15,12 +15,20 @@ import (
 //
 // An error that escapes is printed to stderr in the classic form,
 // ?KIND ERROR IN file:line — message, and the program exits with status 1.
+//
+// A program with TEST blocks, or a rip test build, runs its tests after the
+// top-level code instead of starting the server (expect.go).
 func Main(run func(c *Ctx)) {
 	c := NewCtx(context.Background())
 	app := c.App()
 	if e := runTop(c, run); e != nil {
 		fmt.Fprintln(os.Stderr, e.Error())
 		os.Exit(1)
+	}
+	// Under test, run the TESTs instead of serving: SERVE never binds a port
+	// (Requirement 12.3).
+	if testRun() {
+		os.Exit(runTests(c, os.Stdout, os.Stderr))
 	}
 	// SERVE only recorded the port; listen now that all top-level code has run.
 	if err := app.Run(); err != nil {
