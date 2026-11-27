@@ -519,7 +519,7 @@ func (g *gen) simpleStmt(o *out, s ast.Stmt, sc *scope) bool {
 		g.assign(o, s.At, s.Target, s.Value, sc)
 	case *ast.DimStmt:
 		if s.Shared {
-			g.todo(s.At, "4.3", "SHARED")
+			g.sharedDim(o, s, sc)
 			return true
 		}
 		v := g.lookup(canon(s.Name), sc)
