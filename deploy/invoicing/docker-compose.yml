@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-invoicing}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-invoicing}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../../examples/invoicing/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-invoicing} -d ${POSTGRES_DB:-invoicing}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/invoicing/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: ${PORT:-8080}
+      DATABASE_URL: postgres://${POSTGRES_USER:-invoicing}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-invoicing}?sslmode=disable
+      API_KEY: ${API_KEY:-change-me}
+      TAX_RATE: ${TAX_RATE:-0.075}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    ports:
+      - "${PORT:-8080}:8080"
+
+volumes:
+  pgdata:
