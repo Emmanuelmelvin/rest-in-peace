@@ -1,5 +1,5 @@
 # Build stage: BASIC → Go → one static binary.
-FROM golang:1.24 AS build
+FROM golang:1.26 AS build
 RUN go install github.com/Emmanuelmelvin/rest-in-peace/cmd/rip@latest
 WORKDIR /src
 COPY . .
