@@ -820,3 +820,83 @@ func TestDBCRUDHelpers(t *testing.T) {
 		}
 	})
 }
+
+func TestSQLArgsVariants(t *testing.T) {
+	defer ResetDBs()
+	ResetDBs()
+
+	c := NewCtx(context.Background())
+	DBConnect(c, "sqlite://:memory:", "")
+	SQLExec(c, "CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, customer TEXT NOT NULL, status TEXT NOT NULL, total NUMERIC(12,2) NOT NULL)")
+
+	n := SQLExecArgs(c, "INSERT INTO orders (customer, status, total) VALUES ($1, $2, $3)", ArrayOf("Ada", "paid", DecimalOf("120.50")))
+	if n != 1 {
+		t.Fatalf("SQLExecArgs affected = %d, want 1", n)
+	}
+	SQLExecArgs(c, "INSERT INTO orders (customer, status, total) VALUES ($1, $2, $3)", ArrayOf("Grace", "open", DecimalOf("75.00")))
+
+	// Dynamic filter array with SQLArgs.
+	rows := SQLArgs(c, "SELECT customer, status, total FROM orders WHERE customer = $1 AND status = $2", ArrayOf("Ada", "paid"))
+	if len(rows.Items) != 1 {
+		t.Fatalf("SQLArgs rows = %d, want 1", len(rows.Items))
+	}
+	if got := Get(rows.Items[0], "customer"); got != "Ada" {
+		t.Errorf("customer = %#v, want Ada", got)
+	}
+	if got := ToString(Get(rows.Items[0], "total")); got != "120.50" {
+		t.Errorf("total = %q, want 120.50", got)
+	}
+
+	// Empty array and nil both work as zero parameters.
+	allEmpty := SQLArgs(c, "SELECT id FROM orders ORDER BY id", ArrayOf())
+	if len(allEmpty.Items) != 2 {
+		t.Fatalf("SQLArgs empty array rows = %d, want 2", len(allEmpty.Items))
+	}
+	allNil := SQLArgs(c, "SELECT id FROM orders ORDER BY id", nil)
+	if len(allNil.Items) != 2 {
+		t.Fatalf("SQLArgs nil rows = %d, want 2", len(allNil.Items))
+	}
+
+	// SQLOneArgs returns the first row or nil.
+	one := SQLOneArgs(c, "SELECT customer FROM orders WHERE status = $1", ArrayOf("open"))
+	if got := Get(one, "customer"); got != "Grace" {
+		t.Errorf("SQLOneArgs customer = %#v, want Grace", got)
+	}
+	if none := SQLOneArgs(c, "SELECT customer FROM orders WHERE status = $1", ArrayOf("missing")); none != nil {
+		t.Errorf("SQLOneArgs missing = %#v, want nil", none)
+	}
+
+	// Works inside TRANSACTION (commit + rollback).
+	Tx(c, "", func() {
+		SQLExecArgs(c, "UPDATE orders SET status = $1 WHERE customer = $2", ArrayOf("paid", "Grace"))
+	})
+	if got := Get(SQLOneArgs(c, "SELECT status FROM orders WHERE customer = $1", ArrayOf("Grace")), "status"); got != "paid" {
+		t.Errorf("after tx commit status = %#v, want paid", got)
+	}
+	_ = catchError(t, func() {
+		Tx(c, "", func() {
+			SQLExecArgs(c, "UPDATE orders SET status = $1 WHERE customer = $2", ArrayOf("void", "Grace"))
+			panic(Errorf(KindUser, "abort"))
+		})
+	})
+	if got := Get(SQLOneArgs(c, "SELECT status FROM orders WHERE customer = $1", ArrayOf("Grace")), "status"); got != "paid" {
+		t.Errorf("after tx rollback status = %#v, want paid", got)
+	}
+
+	// Non-array second argument raises TYPE MISMATCH.
+	for _, tc := range []struct {
+		name string
+		fn   func()
+	}{
+		{"SQLArgs", func() { SQLArgs(c, "SELECT 1", "not-an-array") }},
+		{"SQLOneArgs", func() { SQLOneArgs(c, "SELECT 1", int64(42)) }},
+		{"SQLExecArgs", func() { SQLExecArgs(c, "SELECT 1", NewMap()) }},
+	} {
+		t.Run(tc.name+"_non_array", func(t *testing.T) {
+			e := catchError(t, tc.fn)
+			if e == nil || e.Kind != KindTypeMismatch {
+				t.Fatalf("got %#v, want TYPE MISMATCH", e)
+			}
+		})
+	}
+}

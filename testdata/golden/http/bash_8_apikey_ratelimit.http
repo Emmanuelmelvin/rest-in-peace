@@ -1,0 +1,37 @@
+### APIKEY rejects missing header
+GET /secret/data
+=> 401
+
+{"error": "UNAUTHORIZED"}
+
+### APIKEY rejects wrong key
+GET /secret/data
+X-Api-Key: wrong
+=> 401
+
+{"error": "UNAUTHORIZED"}
+
+### APIKEY accepts valid key
+GET /secret/data
+X-Api-Key: s3cr3t
+=> 200
+
+{"classified": true}
+
+### RATELIMIT allows request 1 of 2
+GET /limited/ping
+=> 200
+
+{"ok": true}
+
+### RATELIMIT allows request 2 of 2
+GET /limited/ping
+=> 200
+
+{"ok": true}
+
+### RATELIMIT rejects request 3 of 2
+GET /limited/ping
+=> 429
+
+{"error": "TOO MANY REQUESTS"}

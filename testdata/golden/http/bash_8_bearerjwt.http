@@ -1,0 +1,25 @@
+### Open route bypasses scoped BEARERJWT middleware
+GET /open
+=> 200
+
+{"public": true}
+
+### Missing Authorization header returns 401
+GET /jwt/me
+=> 401
+
+{"error": "UNAUTHORIZED"}
+
+### Non-Bearer scheme returns 401
+GET /jwt/me
+Authorization: Basic dXNlcjpwYXNz
+=> 401
+
+{"error": "UNAUTHORIZED"}
+
+### Invalid JWT signature returns 401
+GET /jwt/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZXhwIjo0MTAyNDQ0ODAwfQ.invalidsignature
+=> 401
+
+{"error": "UNAUTHORIZED"}

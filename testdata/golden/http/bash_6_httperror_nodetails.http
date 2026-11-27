@@ -1,0 +1,17 @@
+### HTTPERROR without details omits details key
+GET /nodetails
+=> 400
+
+{"error": "BAD INPUT"}
+
+### HTTPERROR with details includes details key
+GET /withdetails
+=> 422
+
+{"error": "INVALID", "details": {"field": "email"}}
+
+### RESPOND is not caught by CATCH
+GET /respond-try
+=> 202
+
+{"accepted": true}

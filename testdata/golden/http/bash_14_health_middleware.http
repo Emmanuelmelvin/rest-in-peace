@@ -1,0 +1,11 @@
+### Default /_health returns 200 ALIVE
+GET /_health
+=> 200
+
+{"status": "ALIVE"}
+
+### Handler with REQUESTLOG + LOG with secret keys succeeds
+GET /work
+=> 200
+
+{"ok": true}

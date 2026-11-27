@@ -103,6 +103,9 @@ func mustGetDB(normName string) DB {
 // Supported schemes: postgres://, postgresql://, and sqlite://.
 // Each opened pool's Close is registered with c.App().OnShutdown (Requirement 14.5).
 func DBConnect(c *Ctx, rawURL string, name string) {
+	if testDBConnect(c, rawURL, name) { // rip test: open the test database instead (expect.go)
+		return
+	}
 	trimmed := strings.TrimSpace(rawURL)
 	if trimmed == "" {
 		panic(Errorf(KindDatabase, `DBCONNECT needs a database URL like "postgres://…" or "sqlite://:memory:"`))
@@ -337,6 +340,38 @@ func DBDelete(c *Ctx, table string, where Value) int64 {
 	wm := requireNonEmptyMap("DBDELETE", "where filter", where)
 	clause, args := buildWhereClause("DBDELETE", wm, 1)
 	return SQLExec(c, "DELETE FROM "+tbl+clause, args...)
+}
+
+func unpackSQLArgs(fnName string, params Value) []Value {
+	if params == nil {
+		return nil
+	}
+	arr, ok := params.(*Array)
+	if !ok {
+		panic(Errorf(KindTypeMismatch, "%s expects an ARRAY of parameters as its second argument, got %s", fnName, TypeName(params)))
+	}
+	if arr == nil {
+		return nil
+	}
+	return arr.Items
+}
+
+// SQLArgs implements SQLARGS(query, paramsArray), running SQL with a dynamic
+// ARRAY of bind parameters (for dynamic WHERE clauses and reusable helpers).
+func SQLArgs(c *Ctx, query string, params Value) *Array {
+	return SQL(c, query, unpackSQLArgs("SQLARGS", params)...)
+}
+
+// SQLOneArgs implements SQLONEARGS(query, paramsArray), running SQLONE with a
+// dynamic ARRAY of bind parameters.
+func SQLOneArgs(c *Ctx, query string, params Value) Value {
+	return SQLOne(c, query, unpackSQLArgs("SQLONEARGS", params)...)
+}
+
+// SQLExecArgs implements SQLEXECARGS(query, paramsArray), running SQLEXEC with
+// a dynamic ARRAY of bind parameters.
+func SQLExecArgs(c *Ctx, query string, params Value) int64 {
+	return SQLExec(c, query, unpackSQLArgs("SQLEXECARGS", params)...)
 }
 
 // Tx implements TRANSACTION [ON name] … END TRANSACTION (Requirement 9.5).

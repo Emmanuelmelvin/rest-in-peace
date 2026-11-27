@@ -1,0 +1,21 @@
+### Commit via RESPOND inside TRANSACTION
+POST /ledger
+
+{"id": 1, "label": "Invoice", "amount": "125.50"}
+=> 201
+
+{"saved": true}
+
+### Rollback when HTTPERROR escapes TRANSACTION
+POST /ledger/fail
+
+{"id": 2, "label": "Ghost", "amount": "999.99"}
+=> 400
+
+{"error": "ROLLED BACK"}
+
+### Only the committed row exists, with DECIMAL serialized as string
+GET /ledger
+=> 200
+
+{"entries": [{"id": 1, "label": "Invoice", "amount": "125.50"}]}

@@ -1,0 +1,3 @@
+?EXPECT FAILED ERROR IN test_fail.test.bas:9 — expected 200, got 404
+?EXPECT FAILED ERROR IN test_fail.test.bas:14 — the name is too short
+?NIL ACCESS ERROR IN test_fail.test.bas:19

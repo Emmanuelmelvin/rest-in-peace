@@ -1,95 +1,218 @@
-/* CRT green-phosphor theme (Requirement 15.7). */
+/* CRT green-phosphor theme — Requirement 15.7.
+   Imports "Share Tech Mono" from Google Fonts; falls back to system monospace stacks. */
+@import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap");
+
+/* ─── Design tokens ─────────────────────────────────────────────────────── */
 :root {
-  --bg: #031103;
-  --fg: #33ff66;
-  --dim: #1a9c3d;
-  --glow: 0 0 4px rgba(51, 255, 102, 0.6);
-  --font: "IBM Plex Mono", "Cascadia Mono", "Consolas", monospace;
+  --bg:         #020e02;      /* near-black green-tinted background          */
+  --bg-panel:   #040f04;      /* slightly lighter surface for panels         */
+  --fg:         #39ff7a;      /* phosphor green – main text                  */
+  --fg-dim:     #1e7a40;      /* dimmed text: gutters, labels, secondary     */
+  --fg-muted:   #0d4020;      /* very dim: borders, scanline overlay         */
+  --fg-err:     #ff4d4d;      /* error red that still reads on dark bg       */
+  --fg-ok:      #39ff7a;      /* same as --fg; "ok" is just green            */
+  --accent:     #00ffa3;      /* brighter teal-green for headings / links    */
+  --glow:       0 0 6px rgba(57, 255, 122, 0.55),
+                0 0 2px rgba(57, 255, 122, 0.35);
+  --glow-sm:    0 0 4px rgba(57, 255, 122, 0.4);
+  --font:       "Share Tech Mono", "IBM Plex Mono", "Cascadia Mono",
+                "Consolas", "Courier New", monospace;
+  --radius:     2px;
+  --border:     1px solid var(--fg-muted);
 }
 
-* {
+/* ─── Reset ─────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
+/* ─── Base ───────────────────────────────────────────────────────────────── */
 html,
 body {
-  margin: 0;
-  min-height: 100%;
+  height: 100%;
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: none;   /* keep pixel-sharp on hi-dpi              */
+  font-smooth: never;
 }
 
+/* ─── CRT container ──────────────────────────────────────────────────────── */
 .crt {
   min-height: 100vh;
   padding: 16px;
-  text-shadow: var(--glow);
   position: relative;
+  text-shadow: var(--glow-sm);
 }
 
-/* Scanlines */
+/* Scanline overlay – pseudo-element drawn over everything */
+.crt::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent        0px,
+    transparent        2px,
+    rgba(0, 0, 0, 0.18) 2px,
+    rgba(0, 0, 0, 0.18) 3px
+  );
+}
+
+/* Subtle CRT vignette & phosphor flicker */
 .crt::after {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
-  animation: flicker 4s infinite;
+  z-index: 9998;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 62%,
+    rgba(0, 0, 0, 0.36) 100%
+  );
+  animation: crt-flicker 6s ease-in-out infinite;
 }
 
-@keyframes flicker {
-  0%,
-  100% {
-    opacity: 0.9;
-  }
-  50% {
-    opacity: 1;
-  }
+@keyframes crt-flicker {
+  0%,  100% { opacity: 1;    }
+  20%        { opacity: 0.97; }
+  40%        { opacity: 1;    }
+  60%        { opacity: 0.98; }
+  80%        { opacity: 0.96; }
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+header {
+  margin-bottom: 16px;
 }
 
 header h1 {
-  margin: 0;
-  letter-spacing: 0.2em;
+  font-size: 1.6rem;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  text-shadow: 0 0 10px rgba(0, 255, 163, 0.7),
+               0 0 3px  rgba(0, 255, 163, 0.5);
 }
 
 header p {
-  margin: 4px 0 16px;
-  color: var(--dim);
+  margin-top: 4px;
+  color: var(--fg-dim);
+  letter-spacing: 0.08em;
+  font-size: 0.85rem;
 }
 
+/* ─── Toolbar ────────────────────────────────────────────────────────────── */
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
   margin-bottom: 12px;
 }
 
-.toolbar a {
-  color: var(--fg);
+/* ─── Links ──────────────────────────────────────────────────────────────── */
+a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
   word-break: break-all;
 }
 
+a:hover {
+  color: var(--fg);
+  text-shadow: var(--glow);
+}
+
+/* ─── Form controls ──────────────────────────────────────────────────────── */
 select,
-button {
-  font: inherit;
+button,
+input,
+textarea {
+  font-family: var(--font);
+  font-size: inherit;
   color: var(--fg);
   background: transparent;
-  border: 1px solid var(--fg);
-  padding: 4px 12px;
-  text-shadow: var(--glow);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  text-shadow: var(--glow-sm);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+select:focus,
+input:focus,
+textarea:focus,
+button:focus-visible {
+  border-color: var(--fg);
+  box-shadow: 0 0 0 1px var(--fg-dim);
+}
+
+select {
+  cursor: pointer;
+  padding-right: 26px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%2339ff7a' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+select option {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+button {
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  transition: background 80ms, color 80ms, box-shadow 80ms;
 }
 
 button:hover:not(:disabled) {
   background: var(--fg);
   color: var(--bg);
   text-shadow: none;
+  box-shadow: var(--glow);
+}
+
+button:active:not(:disabled) {
+  opacity: 0.85;
 }
 
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+label {
+  color: var(--fg-dim);
+  letter-spacing: 0.06em;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+label select,
+label input {
+  color: var(--fg);
+}
+
+/* ─── Layout: editor + log ───────────────────────────────────────────────── */
 main {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
@@ -98,52 +221,203 @@ main {
 
 @media (max-width: 800px) {
   main {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
+/* ─── Editor and log panels ──────────────────────────────────────────────── */
 .editor,
 .log {
-  border: 1px solid var(--dim);
+  border: var(--border);
+  border-radius: var(--radius);
   min-height: 60vh;
   overflow: auto;
+  background: var(--bg-panel);
+  scrollbar-color: var(--fg-dim) var(--bg);
+  scrollbar-width: thin;
 }
 
 .log {
-  padding: 8px;
+  padding: 10px 12px;
   white-space: pre-wrap;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--fg);
 }
 
+/* Generic panel container (request tester, live-log, etc.) */
+.panel {
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+/* ─── Blinking cursor ────────────────────────────────────────────────────── */
 .cursor {
-  animation: blink 1s steps(1) infinite;
+  display: inline-block;
+  color: var(--fg);
+  animation: crt-blink 1s steps(1) infinite;
 }
 
-@keyframes blink {
-  50% {
-    opacity: 0;
-  }
+@keyframes crt-blink {
+  50% { opacity: 0; }
 }
 
+/* ─── Status badges ──────────────────────────────────────────────────────── */
+.status-ok {
+  color: var(--fg-ok);
+  text-shadow: var(--glow-sm);
+}
+
+.status-err {
+  color: var(--fg-err);
+  text-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
+}
+
+/* ─── Tables ─────────────────────────────────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 5px 10px;
+  border-bottom: var(--border);
+}
+
+th {
+  color: var(--fg-dim);
+  letter-spacing: 0.08em;
+  font-weight: normal;
+  border-bottom-color: var(--fg-dim);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+/* ─── Pre / code blocks ──────────────────────────────────────────────────── */
+pre {
+  font-family: var(--font);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  background: var(--bg-panel);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ─── CodeMirror internals ───────────────────────────────────────────────── */
 .cm-editor {
   height: 100%;
-  background: transparent;
+  background: transparent !important;
   color: var(--fg);
-  font-family: var(--font);
+  font-family: var(--font) !important;
+  font-size: 14px;
+}
+
+.cm-scroller {
+  font-family: var(--font) !important;
+  scrollbar-color: var(--fg-dim) var(--bg);
+  scrollbar-width: thin;
+}
+
+.cm-content {
+  caret-color: var(--fg);
 }
 
 .cm-gutters {
   background: transparent !important;
-  color: var(--dim) !important;
-  border-right: 1px solid var(--dim) !important;
+  color: var(--fg-dim) !important;
+  border-right: 1px solid var(--fg-muted) !important;
 }
 
-.cm-cursor {
+.cm-lineNumbers .cm-gutterElement {
+  color: var(--fg-dim) !important;
+  padding-right: 10px;
+}
+
+.cm-activeLineGutter {
+  background: rgba(57, 255, 122, 0.06) !important;
+  color: var(--fg-dim) !important;
+}
+
+.cm-activeLine {
+  background: rgba(57, 255, 122, 0.04) !important;
+}
+
+.cm-cursor,
+.cm-dropCursor {
   border-left-color: var(--fg) !important;
 }
 
+.cm-selectionBackground,
+.cm-editor .cm-selectionBackground {
+  background: rgba(57, 255, 122, 0.18) !important;
+}
+
+.cm-focused .cm-selectionBackground {
+  background: rgba(57, 255, 122, 0.25) !important;
+}
+
+/* Matching-bracket highlight */
+.cm-matchingBracket {
+  outline: 1px solid var(--fg-dim);
+  color: var(--accent) !important;
+}
+
+/* Search match highlight */
+.cm-searchMatch {
+  background: rgba(0, 255, 163, 0.2);
+  outline: 1px solid var(--accent);
+}
+
+.cm-searchMatch.cm-searchMatch-selected {
+  background: rgba(0, 255, 163, 0.35);
+}
+
+/* Tooltip (autocomplete, hover) */
+.cm-tooltip {
+  background: var(--bg-panel) !important;
+  border: var(--border) !important;
+  color: var(--fg) !important;
+  font-family: var(--font) !important;
+  box-shadow: var(--glow-sm);
+}
+
+.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background: rgba(57, 255, 122, 0.15) !important;
+  color: var(--accent) !important;
+}
+
+/* ─── RIP BASIC syntax highlighting tokens ───────────────────────────────── */
+/* StreamLanguage token names → .tok-<name> in the default highlight style.
+   We over-ride only colours that need to differ from the base fg. */
+.tok-keyword     { color: var(--accent); font-style: normal; }
+.tok-comment     { color: var(--fg-dim); font-style: italic; }
+.tok-string      { color: #ffe066; }     /* warm yellow – readable on dark   */
+.tok-number      { color: #66d9ff; }     /* cool blue – contrasts well       */
+.tok-labelName   { color: var(--fg-dim); }  /* classic line numbers          */
+.tok-variableName{ color: var(--fg); }
+.tok-operator    { color: var(--fg-dim); }
+
+/* ─── Reduced-motion: disable every animation ───────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .crt::after,
-  .cursor {
-    animation: none;
+  .cursor,
+  .crt-flicker {
+    animation: none !important;
+  }
+
+  button {
+    transition: none;
   }
 }

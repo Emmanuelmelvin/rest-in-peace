@@ -340,6 +340,7 @@ func (a *App) serveRequest(w http.ResponseWriter, r *http.Request, run func(c *C
 		return
 	}
 	c := NewCtx(r.Context())
+	applyPlaygroundDeadline(c)
 	c.app = a
 	c.Req = req
 	mws := a.matchingMiddleware(r.URL.Path)

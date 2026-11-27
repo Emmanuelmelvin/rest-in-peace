@@ -1,0 +1,42 @@
+### GET with param and req.id
+GET /items/42
+=> 200
+
+{"method": "GET", "id": "42", "reqId": "<any string>"}
+
+### POST with custom response header
+POST /items
+
+{"name": "Lantern"}
+=> 201
+x-created: true
+
+{"method": "POST", "name": "Lantern"}
+
+### PUT
+PUT /items/42
+
+{"name": "Torch"}
+=> 200
+
+{"method": "PUT", "id": "42", "name": "Torch"}
+
+### PATCH
+PATCH /items/42
+
+{"name": "Candle"}
+=> 200
+
+{"method": "PATCH", "id": "42", "name": "Candle"}
+
+### DELETE
+DELETE /items/42
+=> 200
+
+{"method": "DELETE", "id": "42"}
+
+### Unmatched method on known path returns 404 realm message
+DELETE /readonly
+=> 404
+
+{"error": "ROUTE NOT FOUND IN THIS REALM"}

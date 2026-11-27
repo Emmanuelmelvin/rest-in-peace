@@ -77,6 +77,45 @@ END FUNCTION
 			wantWarn: true,
 			wantLine: 2,
 		},
+		{
+			name: "sqlargs_amp_req",
+			src: `FUNCTION Search(req)
+  LET rows = SQLARGS("SELECT * FROM t WHERE name = '" & req.params.name & "'", [])
+  RETURN rows
+END FUNCTION
+`,
+			wantWarn: true,
+			wantLine: 2,
+		},
+		{
+			name: "sqloneargs_plus_req",
+			src: `FUNCTION GetOne(req)
+  LET row = SQLONEARGS("SELECT * FROM t WHERE id = " + req.params.id, [])
+  RETURN row
+END FUNCTION
+`,
+			wantWarn: true,
+			wantLine: 2,
+		},
+		{
+			name: "sqlexecargs_amp_req",
+			src: `FUNCTION Delete(req)
+  SQLEXECARGS("DELETE FROM t WHERE id = " & req.params.id, [])
+  RETURN NIL
+END FUNCTION
+`,
+			wantWarn: true,
+			wantLine: 2,
+		},
+		{
+			name: "sqlargs_safe_parameterized",
+			src: `FUNCTION Search(req)
+  LET rows = SQLARGS("SELECT * FROM t WHERE name = $1", [req.params.name])
+  RETURN rows
+END FUNCTION
+`,
+			wantWarn: false,
+		},
 		// ----- structured mode: req index access -----
 		{
 			name: "sql_req_index_access",
