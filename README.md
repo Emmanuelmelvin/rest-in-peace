@@ -1,8 +1,38 @@
-# REST in Peace
+<p align="center">
+  <img src="docs/assets/hero-banner.jpg" alt="REST in Peace — RIP BASIC: A 1975 language, raised from the grave for production backends." width="100%" />
+</p>
 
-> *A 1975 language, raised from the grave, rebuilt for production backends.*
+<p align="center">
+  <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/Go-1.26+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.26+" /></a>
+  <img src="https://img.shields.io/badge/Kiroween%202026-Resurrection-39ff88?style=for-the-badge&labelColor=0d1117" alt="Kiroween 2026 — Resurrection" />
+  <img src="https://img.shields.io/badge/Static%20Binary-10.8%20MiB-1f2937?style=for-the-badge&labelColor=0d1117" alt="Static Binary 10.8 MiB" />
+  <img src="https://img.shields.io/badge/Idle%20RAM-~9%20MiB-1f2937?style=for-the-badge&labelColor=0d1117" alt="Idle RAM ~9 MiB" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-39ff88?style=for-the-badge&labelColor=0d1117" alt="MIT License" /></a>
+</p>
 
-**RIP BASIC** is a modern BASIC for real backend services. It **compiles to Go** and ships as **one native binary**: small memory use, millisecond startup, goroutines under the hood. You write readable BASIC.
+<p align="center">
+  <a href="#-30-second-quick-start">Quick Start</a> ·
+  <a href="#-why-its-not-a-toy">Feature Tour</a> ·
+  <a href="#-how-it-works">Architecture</a> ·
+  <a href="#-real-apis-you-can-run-today">Examples</a> ·
+  <a href="#-benchmarks">Benchmarks</a> ·
+  <a href="#-built-with-kiro-kiroween-2026">Built with Kiro</a> ·
+  <a href="docs/language.md">Language Reference</a>
+</p>
+
+---
+
+**RIP BASIC** resurrects 1975 BASIC as a **production backend language**. It compiles straight to **Go** and ships as **one static native binary** — ~9 MiB idle RAM, goroutines under the hood, Postgres/SQLite transactions, exact `DECIMAL` money math, any Go package, and **zero Go stack traces**.
+
+Write clean structured BASIC — **or 1975 line-numbered `GOTO` BASIC** (which compiles to real native Go `goto`):
+
+<table>
+<tr>
+<th width="50%">Modern Structured Mode</th>
+<th width="50%">1975 Classic Mode (real Go <code>goto</code>)</th>
+</tr>
+<tr>
+<td>
 
 ```basic
 ROUTE GET "/hello" CALL Hello
@@ -13,7 +43,8 @@ FUNCTION Hello(req)
 END FUNCTION
 ```
 
-Line-numbered classic BASIC still works too. It compiles to real Go `goto`:
+</td>
+<td>
 
 ```basic
 10 ROUTE GET "/hello" GOSUB 100
@@ -21,65 +52,43 @@ Line-numbered classic BASIC still works too. It compiles to real Go `goto`:
 100 RESPOND 200, {"message": "HELLO WORLD"}
 ```
 
-Built for Kiroween 2026 (Resurrection category).
+</td>
+</tr>
+</table>
 
-## Status
+---
 
-**Phases 0–3 are done.** The compiler, the runtime and the CLI work end to end. You can build and deploy a real API today:
+## ⚡ 30-Second Quick Start
 
-- the compiler: lexer, parser, checks, Go codegen with `//line` directives, classic and structured modes;
-- the HTTP runtime: routes, route groups, `RESPOND`, `/_health`, body limits, graceful shutdown;
-- middleware: your own, plus `APIKEY`, `CORS`, `RATELIMIT`, `BEARERJWT` and `REQUESTLOG`;
-- errors: `TRY`/`CATCH`/`FINALLY`, `THROW`, `HTTPERROR`, BASIC-style messages, no Go stack traces;
-- exact `DECIMAL` money math;
-- databases: Postgres and SQLite, `$1` placeholders, `TRANSACTION`, `rip migrate`, an SQL injection warning;
-- `IMPORT`/`EXPORT` between `.bas` files, and `IMPORT … FROM GO` for any Go package;
-- `ENV`, `LOG` with secret redaction, and `FETCH` for outbound HTTP;
-- `rip new`, `rip run`, `rip build`, `rip migrate` and `rip check`.
-
-**In progress this week:** `rip dev` watch mode, tests in BASIC (`TEST`, `EXPECT`, `REQUEST`) and `rip test`, `SHARED` variables, the hosted playground, and the benchmark. The plan is in [`tasks.md`](.kiro/specs/rip-basic/tasks.md).
-
-## Quick start
-
-You need [Go 1.26+](https://go.dev/dl/). `rip` turns BASIC into Go and calls the Go toolchain to build it. The binaries it builds don't need Go.
+Requires [Go 1.26+](https://go.dev/dl/) to compile; the resulting binaries have **zero runtime dependencies**.
 
 ```sh
 go install github.com/Emmanuelmelvin/rest-in-peace/cmd/rip@latest
+
 rip new shop && cd shop
-rip run                       # READY. listening on :8080
+rip dev                       # READY. listening on :8080 (auto-rebuilds on save)
 curl localhost:8080/hello     # {"message":"HELLO WORLD"}
-rip build                     # dist/shop: one static binary
+rip test                      # runs tests/*.test.bas against SQLite :memory:
+rip build                     # dist/shop — one ~11 MB static binary
 ```
 
-`rip dev` (rebuild and restart on every save) and `rip test` land this week. Until then, `rip dev` runs once, like `rip run`.
-
-| Command | Does |
-|---|---|
-| `rip new <name>` | scaffold a project (`main.bas`, `rip.json`, `migrations/`, `tests/`, `.env.example`, `Dockerfile`, `.kiro/`) |
-| `rip dev [file.bas]` | compile and run, rebuilding and restarting on file change |
-| `rip run [file.bas]` | compile and run once |
-| `rip test` | run `tests/*.test.bas` against SQLite `:memory:` (or `TEST_DATABASE_URL`) |
-| `rip build [--os X] [--arch Y] [-o file]` | build one static binary in `dist/` |
-| `rip migrate` | apply `migrations/*.sql` |
-| `rip check [file.bas]` | compile only; print errors and warnings |
-
-From a clone:
+From a local clone:
 
 ```sh
-go run ./cmd/rip help
 go run ./cmd/rip run examples/hello.bas
 go test ./...
 ```
 
-## A short tour
+---
 
-The full reference is [`docs/language.md`](docs/language.md). Here are the highlights.
+## 🪦 Why It's Not a Toy
 
-**Routes, JSON and errors.** Handlers get `req` and return a value, which is sent as JSON. `RESPOND` sets the status and headers. An `HTTPERROR` that escapes a handler becomes the response.
+### 1. Routes, JSON & First-Class HTTP Errors
+Handlers receive `req` and return values directly as JSON. Any `HTTPERROR` that escapes a handler becomes the HTTP response; unexpected crashes return `500` with a `requestId` and never leak internals.
 
 ```basic
-ROUTE GET "/graves/:id" CALL GetGrave
-ROUTE POST "/graves" CALL Dig
+ROUTE GET  "/graves/:id" CALL GetGrave
+ROUTE POST "/graves"     CALL Dig
 SERVE
 
 FUNCTION GetGrave(req)
@@ -93,19 +102,20 @@ FUNCTION Dig(req)
 END FUNCTION
 ```
 
-**Money that adds up.** `NUMBER` is a float, so `0.1 + 0.2` isn't `0.3`. `DECIMAL` is exact, and it serializes to JSON as a string that keeps its scale (`"215.00"`).
+### 2. Exact `DECIMAL` Money Math
+Floats break billing (`0.1 + 0.2 != 0.3`). `DECIMAL` is exact fixed-point math backed by `shopspring/decimal`, and serializes to JSON as a scale-preserving string (`"64.47"`).
 
 ```basic
 LET subtotal = DECIMAL("19.99") * 3
-LET tax = ROUND(subtotal * DECIMAL("0.075"), 2)
-PRINT subtotal + tax            ' 64.47
+LET tax      = ROUND(subtotal * DECIMAL("0.075"), 2)
+PRINT subtotal + tax          ' 64.47
 ```
 
-**Databases and transactions.** Placeholders are always `$1, $2…`, on Postgres and SQLite. A `TRANSACTION` commits when the block finishes and rolls back if an error escapes it, including SQL run by functions it calls.
+### 3. Postgres & SQLite, `TRANSACTION`, and a Compile-Time SQL Injection Guard
+Placeholders are always `$1, $2…` on both Postgres and SQLite. A `TRANSACTION` commits automatically on exit and rolls back if any error escapes — even from nested function calls. Concatenating `req.*` input into SQL triggers a **compile-time taint warning**.
 
 ```basic
 DBCONNECT ENV("DATABASE_URL", "sqlite://:memory:")
-SQLEXEC("CREATE TABLE IF NOT EXISTS souls (name TEXT NOT NULL)")
 
 TRANSACTION
   SQLEXEC("INSERT INTO souls (name) VALUES ($1)", "Casper")
@@ -117,234 +127,142 @@ FOR EACH soul IN SQL("SELECT name FROM souls")
 NEXT
 ```
 
-**Middleware.** Built-ins or your own, scoped to a path.
+### 4. Import Any Go Package
+Need UUIDs, URL parsing, bcrypt, or Stripe? Pull any Go stdlib or third-party package straight into BASIC. Go errors automatically become catchable BASIC errors (`e.kind = "GO"`).
 
 ```basic
-USE REQUESTLOG()
-USE RATELIMIT(120)
-USE APIKEY("API_KEY") ON "/admin/*"
-USE Haunt
-ROUTE GET "/admin/stats" CALL Stats
-SERVE
-
-SUB Haunt(req)
-  req.ctx.ghost = "BOO"
-END SUB
-
-FUNCTION Stats(req)
-  RETURN {"ghost": req.ctx.ghost}
-END FUNCTION
-```
-
-**Any Go package.** Arguments and results are converted using the package's types, and Go errors become BASIC errors with `e.kind = "GO"`. For a third-party package, the project needs a `go.mod` that requires it (`go mod init shop && go get github.com/google/uuid`).
-
-```basic
-IMPORT uuid FROM GO "github.com/google/uuid"
 IMPORT strings FROM GO "strings"
+IMPORT uuid    FROM GO "github.com/google/uuid"
 
 PRINT strings.ToUpper("rest in peace")
 PRINT uuid.NewString()
 ```
 
-**Errors in BASIC terms.** At compile time and at runtime, with the BASIC file and line and a hint. Never a Go stack trace.
+### 5. Production Middleware & Secret-Redacting Logs
+Built-in `APIKEY` (constant-time comparison), `BEARERJWT` (HS256 + expiration), `RATELIMIT`, `CORS`, and `REQUESTLOG`. Structured JSON `LOG` automatically redacts `password`, `token`, `apiKey`, `authorization`, and `secret` keys at any nesting depth.
+
+```basic
+USE REQUESTLOG()
+USE CORS({"origins": ENV("CORS_ORIGIN", "*")})
+USE RATELIMIT(120)
+USE APIKEY("API_KEY") ON "/v1/*"
+```
+
+### 6. Errors in BASIC — Never a Go Stack Trace
+Every statement emits a Go `//line file.bas:N` directive, so compile errors and runtime errors always point to your `.bas` file and line — with actionable hints and zero source maps.
 
 ```text
 ?SYNTAX ERROR IN main.bas:1 — expected THEN after IF condition
 ?NIL ACCESS ERROR IN main.bas:2 — cannot read "name" of NIL — check the value exists before using it
 ?INJECTION RISK WARNING IN main.bas:5 — use $1 placeholders
+508 {"error": "TRAPPED IN AN ETERNAL GOTO LOOP"}
 ```
 
-## Walkthrough: the Invoicing API
+---
 
-[`examples/invoicing`](examples/invoicing) is a complete service: API-key auth, exact money math, a Postgres transaction, migrations and tests.
+## ⚙️ How It Works
 
-```
-examples/invoicing/
-  rip.json              {"name": "invoicing", "main": "main.bas"}
-  main.bas              routes, middleware, database
-  billing.bas           pure business logic
-  migrations/001_invoices.sql
-  tests/billing.test.bas
-  .env.example  .env.test  Dockerfile
-```
+<p align="center">
+  <img src="docs/assets/architecture.jpg" alt="RIP BASIC Compiler Pipeline: .bas Source -> RIP Compiler -> Go Codegen -> One Static Binary" width="100%" />
+</p>
 
-### 1. Business logic in its own module
+- **Single Go package output:** All reachable `.bas` modules compile into one `package main` + an embedded runtime (`rt/`) shipped inside the `rip` CLI.
+- **Native Go speed where it counts:** Typed declarations (`DIM n AS INTEGER`) compile to native Go types; untyped values use lightweight runtime helpers.
+- **Zero-overhead `//line` mapping:** Every BASIC statement maps directly to its `.bas` file and line number in the Go binary — no source maps needed.
+- **Real concurrency:** Every HTTP request runs on its own goroutine. Classic line-numbered handlers serialize safely around shared globals, and the hosted playground enforces a 128 MB memory cap, 5-second timeout, and loop guards.
 
-`billing.bas` has no HTTP and no SQL, so it's easy to test. It exports two functions. Totals are `DECIMAL`, and a bad quantity throws a `422` that will reach the client as is.
+Deep dive in [`.kiro/specs/rip-basic/design.md`](.kiro/specs/rip-basic/design.md).
+
+---
+
+## 🚀 Real APIs You Can Run Today
+
+| Example | What it showcases | Run it |
+|---|---|---|
+| **[`examples/invoicing`](examples/invoicing)** | Full invoicing API: exact `DECIMAL` math, Postgres `TRANSACTION`, `APIKEY` auth, `migrations/`, `rip test`, distroless `Dockerfile` | `cd examples/invoicing && rip test` |
+| **[`examples/url-shortener`](examples/url-shortener)** | Production URL shortener: `302` redirects, atomic click analytics, Go `net/url` & `regexp` interop, `RATELIMIT`, distroless `Dockerfile` | `cd examples/url-shortener && rip test` |
+| **[`examples/classic-todo.bas`](examples/classic-todo.bas)** | Full CRUD REST API written in 1975 line-numbered `GOSUB`/`GOTO` BASIC | `rip run examples/classic-todo.bas` |
+| **[`examples/goto-hell.bas`](examples/goto-hell.bas)** | An infinite `GOTO` loop — demonstrates the `508 TRAPPED IN AN ETERNAL GOTO LOOP` safety guard | `rip run examples/goto-hell.bas` |
+
+In-process HTTP + unit tests live right in `tests/*.test.bas` — no mocks, no external test runner:
 
 ```basic
-' billing.bas
-EXPORT FUNCTION LineTotal(item) AS DECIMAL
-  RETURN ROUND(DECIMAL(item.unitPrice) * item.quantity, 2)
-END FUNCTION
+TEST "FULL SHORTEN, REDIRECT, AND ANALYTICS FLOW"
+  LET hdrs = {"x-api-key": "test-key"}
+  LET created = REQUEST("POST", "/api/links", {"url": "https://example.com/docs"}, hdrs)
+  EXPECT created.status = 201
 
-EXPORT FUNCTION InvoiceTotals(items AS ARRAY, taxRate AS DECIMAL) AS MAP
-  DIM subtotal AS DECIMAL = DECIMAL("0")
-  FOR EACH item IN items
-    IF item.quantity = NIL OR item.quantity <= 0 THEN THROW HTTPERROR(422, "QUANTITY MUST BE POSITIVE")
-    subtotal = subtotal + LineTotal(item)
-  NEXT
-  LET tax = ROUND(subtotal * taxRate, 2)
-  RETURN {"subtotal": subtotal, "tax": tax, "total": subtotal + tax}
-END FUNCTION
+  LET redir = REQUEST("GET", "/r/" & created.body.code)
+  EXPECT redir.status = 302
+  EXPECT redir.headers["location"] = "https://example.com/docs"
+END TEST
 ```
 
-### 2. Wiring: config, middleware, routes
+---
 
-`main.bas` imports `InvoiceTotals`, connects to the database named by `DATABASE_URL` (startup stops with a clear error if it's missing), and reads the tax rate from the environment. Every request is logged, CORS headers are added, and everything under `/v1/` needs an `x-api-key` header that matches `API_KEY`.
+## 📊 Benchmarks
 
-```basic
-' main.bas
-IMPORT { InvoiceTotals } FROM "./billing.bas"
+Measured against an equivalent hand-written Go `net/http` baseline (`GOMAXPROCS=1`, 64 concurrent keep-alive connections, `examples/hello.bas` compiled with `rip build`):
 
-DBCONNECT ENVREQUIRE("DATABASE_URL")
-CONST TAX_RATE = DECIMAL(ENV("TAX_RATE", "0.075"))
+| Metric | RIP BASIC (`hello.bas`) | Plain Go `net/http` | Spec Target |
+|---|---:|---:|---|
+| **Static binary size** | **10.78 MiB** | 6.50 MiB | `<= 30 MB` ✅ |
+| **Idle memory (RSS)** | **8.93 MiB** | 8.02 MiB | `<= 20 MB` ✅ |
+| **Throughput (`GOMAXPROCS=1`)** | **6,668.7 req/s** | 6,414.7 req/s | Matches Go `net/http` |
+| **Errors (66,740 requests)** | **0** | 0 | `0` ✅ |
 
-USE REQUESTLOG()
-USE CORS({"origins": ENV("CORS_ORIGIN", "*")})
-USE APIKEY("API_KEY") ON "/v1/*"
+Full reproducible setup, multi-core runs, and honest caveats (Windows loopback limits & Go heap scavenging) are documented in [`docs/benchmarks.md`](docs/benchmarks.md).
 
-ROUTE GROUP "/v1"
-  ROUTE POST "/invoices"     CALL CreateInvoice
-  ROUTE GET  "/invoices/:id" CALL GetInvoice
-END GROUP
+---
 
-SERVE
-```
+## 🎃 Built with Kiro (Kiroween 2026)
 
-### 3. Handlers: validation, a transaction, a 404
+REST in Peace was built end-to-end with a **spec-driven `.kiro/` workflow**:
 
-`CreateInvoice` validates the body, computes the totals, then writes the invoice and its items in one transaction. If any insert fails, nothing is written. `RESPOND 201` sends the new row. `GetInvoice` returns `404 INVOICE IS DEAD` for a missing invoice.
+- **Specs:** [`.kiro/specs/rip-basic/requirements.md`](.kiro/specs/rip-basic/requirements.md) (16 EARS requirements), [`design.md`](.kiro/specs/rip-basic/design.md), and [`tasks.md`](.kiro/specs/rip-basic/tasks.md).
+- **Steering:** [`.kiro/steering/`](.kiro/steering) locks down language grammar, security rules (constant-time auth, HS256-only JWT, log redaction, taint analysis), and code ownership.
+- **Hooks:** Automated checks run golden tests, `rip check`, and example suites on save.
+- **Built directly in Kiro:** Built-in middleware (`APIKEY`, `CORS`, `REQUESTLOG`, `RATELIMIT`, `BEARERJWT`), `ENV`/`LOG` with recursive secret redaction, `DECIMAL`/`ROUND`, `rip migrate`, compile-time SQL injection taint analysis, `FETCH` outbound HTTP, and the CRT playground theme.
 
-```basic
-FUNCTION CreateInvoice(req)
-  LET b = req.body
-  IF b.customerId = NIL OR LEN(b.items) = 0 THEN
-    THROW HTTPERROR(400, "CUSTOMER AND ITEMS REQUIRED")
-  END IF
+Read the full engineering log in [`docs/kiro.md`](docs/kiro.md).
 
-  LET totals = InvoiceTotals(b.items, TAX_RATE)
+---
 
-  TRANSACTION
-    LET inv = SQLONE("INSERT INTO invoices (customer_id, subtotal, tax, total) VALUES ($1, $2, $3, $4) RETURNING *", b.customerId, totals.subtotal, totals.tax, totals.total)
-    FOR EACH item IN b.items
-      SQLEXEC("INSERT INTO invoice_items (invoice_id, description, quantity, unit_price) VALUES ($1, $2, $3, $4)", inv.id, item.description, item.quantity, item.unitPrice)
-    NEXT
-  END TRANSACTION
+<details>
+<summary><strong>🛠️ CLI Command Reference</strong></summary>
 
-  LOG "INFO", "INVOICE CREATED", {"invoiceId": inv.id, "total": totals.total}
-  RESPOND 201, inv
-END FUNCTION
-
-FUNCTION GetInvoice(req)
-  LET inv = SQLONE("SELECT * FROM invoices WHERE id = $1", req.params.id)
-  IF inv = NIL THEN THROW HTTPERROR(404, "INVOICE IS DEAD")
-  inv.items = SQL("SELECT * FROM invoice_items WHERE invoice_id = $1", inv.id)
-  RETURN inv
-END FUNCTION
-```
-
-The money columns are `NUMERIC(12,2)` in [the migration](examples/invoicing/migrations/001_invoices.sql), so they come back from the database as `DECIMAL`, not floats.
-
-### 4. Run it
-
-```sh
-cd examples/invoicing
-cp .env.example .env          # set DATABASE_URL to your Postgres, and API_KEY
-rip migrate                   # APPLY 001_invoices.sql
-rip run                       # READY. listening on :8080
-```
-
-```sh
-curl -X POST localhost:8080/v1/invoices -H "x-api-key: change-me" \
-  -d '{"customerId": 42, "items": [
-        {"description": "Oak coffin", "quantity": 1, "unitPrice": "150.00"},
-        {"description": "Candles",    "quantity": 4, "unitPrice": "12.50"}]}'
-```
-
-```text
-201 {"id": 1, "customer_id": 42, "subtotal": "200.00", "tax": "15.00", "total": "215.00", "created_at": "…"}
-```
-
-| Request | Response |
+| Command | Does |
 |---|---|
-| `GET /v1/invoices/1` | `200`, the invoice with its `items` |
-| `GET /v1/invoices/999` | `404 {"error": "INVOICE IS DEAD"}` |
-| a `quantity` of `-1` | `422 {"error": "QUANTITY MUST BE POSITIVE"}` |
-| no `customerId` | `400 {"error": "CUSTOMER AND ITEMS REQUIRED"}` |
-| no `x-api-key` | `401 {"error": "UNAUTHORIZED"}` |
-| a crash anywhere | `500 {"error": "INTERNAL ERROR", "requestId": "…"}`, details in the log only |
+| `rip new <name>` | Scaffold a project (`main.bas`, `rip.json`, `migrations/`, `tests/`, `.env.example`, `Dockerfile`, `.kiro/`) |
+| `rip dev [file.bas]` | Compile and run, automatically rebuilding and restarting on file save |
+| `rip run [file.bas]` | Compile and run once |
+| `rip test` | Run `tests/*.test.bas` against SQLite `:memory:` (or `TEST_DATABASE_URL`) |
+| `rip build [--os X] [--arch Y] [-o file]` | Cross-compile one static binary in `dist/` |
+| `rip migrate` | Apply `migrations/*.sql` in order, tracked in `_rip_migrations` |
+| `rip check [file.bas]` | Compile-check only; print errors and warnings (including SQL injection risks) |
 
-`REQUESTLOG()` writes one JSON line per request, and `LOG` adds its own, tagged with the same request ID: `{"level":"INFO","msg":"INVOICE CREATED","requestId":"…","invoiceId":1,"total":"215.00"}`.
+</details>
 
-### 5. Test it (coming in this release)
-
-[`tests/billing.test.bas`](examples/invoicing/tests/billing.test.bas) tests the money math directly, and the HTTP layer in-process with `REQUEST`, no network:
-
-```basic
-' tests/billing.test.bas
-IMPORT { InvoiceTotals } FROM "../billing.bas"
-
-TEST "ADDS TAX CORRECTLY"
-  LET t = InvoiceTotals([{"unitPrice": "100.00", "quantity": 2}], DECIMAL("0.075"))
-  EXPECT t.total = DECIMAL("215.00")
-END TEST
-
-TEST "REJECTS MISSING API KEY"
-  LET r = REQUEST("POST", "/v1/invoices", {"customerId": 1, "items": []})
-  EXPECT r.status = 401
-END TEST
-```
-
-`rip test` runs them against a fresh SQLite `:memory:` database (or `TEST_DATABASE_URL`) with the values in `.env.test`, and exits non-zero on failure.
-
-### 6. Ship it
-
-```sh
-rip build --os linux --arch amd64 -o dist/invoicing
-```
-
-The result is one static binary with no runtime dependencies. The [`Dockerfile`](examples/invoicing/Dockerfile) builds it and copies it into a distroless image.
-
-## How it works
-
-```
-.bas → lexer → parser → checks → Go codegen (//line directives) → go build → native binary
-```
-
-- A program is all of a project's `.bas` files, compiled into one Go `package main` plus the runtime package `rt`.
-- Typed declarations (`DIM n AS INTEGER`) compile to native Go types. Untyped values go through small runtime helpers.
-- Every BASIC statement gets a `//line file.bas:N` directive, so the Go compiler records BASIC positions in the binary. When something goes wrong, the error names the BASIC line, with no source maps.
-- Classic programs compile to one Go function where every BASIC line is a label, so `GOTO` really is `goto`.
-- Each request runs on its own goroutine. Classic handlers, which share global variables, run one at a time.
-- The runtime (`rt/`) is embedded in the `rip` CLI and copied into every build, so a program always links the runtime that matches its compiler. Builds go to `.rip/build/` and use Go's build cache.
-
-Details are in [`design.md`](.kiro/specs/rip-basic/design.md).
-
-## Playground & benchmarks
-
-- **Hosted playground (coming in this release):** write BASIC in a CRT green-phosphor browser editor, click **RUN**, and get a live API URL at `/p/<programId>/` with live SSE logs and a built-in request tester. Each program runs in its own OS process with a 128 MB memory cap, a 5-second request timeout, and compiled-in loop guards (`508 {"error": "TRAPPED IN AN ETERNAL GOTO LOOP"}`).
-- **Benchmarks:** throughput (`req/s`), idle memory (RSS), and static binary size numbers will be published in [`docs/benchmarks.md`](docs/benchmarks.md).
-
-## Repository layout
+<details>
+<summary><strong>📁 Repository Layout</strong></summary>
 
 | Path | What |
 |---|---|
-| `.kiro/` | Kiro specs, steering and hooks |
-| `cmd/rip`, `internal/cli` | the `rip` CLI |
-| `internal/compiler` | lexer, parser, AST, checks, Go codegen, diagnostics |
-| `internal/build` | build directory, embedded runtime, `go build` |
-| `internal/scaffold` | `rip new` templates |
-| `rt/` | runtime linked into every program |
-| `cmd/playground`, `internal/playground`, `playground/web` | hosted playground |
-| `examples/` | [`hello.bas`](examples/hello.bas), [`hello-classic.bas`](examples/hello-classic.bas), [`classic-todo.bas`](examples/classic-todo.bas), [`goto-hell.bas`](examples/goto-hell.bas), [`invoicing/`](examples/invoicing) |
-| `testdata/golden` | golden test programs |
-| `docs/` | [`language.md`](docs/language.md), [`kiro.md`](docs/kiro.md), track plans |
+| `.kiro/` | Kiro specs, steering files, and hooks |
+| `cmd/rip`, `internal/cli` | The `rip` CLI (`new`, `dev`, `run`, `test`, `build`, `migrate`, `check`) |
+| `internal/compiler` | Lexer, parser, AST, semantic & injection checks, Go codegen, Go interop |
+| `internal/build` | Build pipeline, embedded runtime, `go.mod` resolution, `go build` |
+| `rt/` | Runtime linked into every compiled binary (HTTP, SQL, middleware, `DECIMAL`, `FETCH`, `LOG`) |
+| `cmd/playground`, `internal/playground`, `playground/web` | Hosted CRT playground with live SSE logs and loop/memory sandboxing |
+| `examples/` | [`invoicing/`](examples/invoicing), [`url-shortener/`](examples/url-shortener), [`classic-todo.bas`](examples/classic-todo.bas), [`goto-hell.bas`](examples/goto-hell.bas), [`hello.bas`](examples/hello.bas) |
+| `bench/` | Reproducible throughput, RSS, and binary-size benchmark harness |
+| `testdata/golden` | End-to-end golden compiler & runtime tests |
+| `docs/` | [`language.md`](docs/language.md), [`benchmarks.md`](docs/benchmarks.md), [`kiro.md`](docs/kiro.md) |
 
-## Built with Kiro
+</details>
 
-The project is spec-driven. [`requirements.md`](.kiro/specs/rip-basic/requirements.md), [`design.md`](.kiro/specs/rip-basic/design.md) and [`tasks.md`](.kiro/specs/rip-basic/tasks.md) are the source of truth, the steering files in [`.kiro/steering`](.kiro/steering) keep every change on the same language rules, and the hooks run checks as files change. Several runtime and compiler pieces (middleware, ENV and LOG, DECIMAL, `rip migrate`, the injection warning, `FETCH`) were built in Kiro. The write-up is in [`docs/kiro.md`](docs/kiro.md).
+---
 
-## License
-
-[MIT](LICENSE)
+<p align="center">
+  <strong>MIT Licensed</strong> · Built for <strong>Kiroween 2026</strong> · <code>READY.</code>
+</p>
