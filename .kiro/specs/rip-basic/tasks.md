@@ -115,3 +115,15 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
 - [ ] 6.4 `P0` Demo video under 3 min on YouTube
 - [ ] 6.5 `P0` Submit on Devpost **before Fri 4 Dec, 11:00 PM WAT**
 - [ ] 6.6 `P1` VS Code / Kiro extension with a TextMate grammar for `.bas` highlighting
+
+## Phase 7 — Node-style Runtime Standard Library (Tier 1)
+
+- [x] 7.1 `P0` File system & path built-ins: `READFILE`, `WRITEFILE`, `APPENDFILE`, `FILEEXISTS`, `DELETEFILE`, `MKDIR`, `READDIR`, `FILESTAT`, `PATHJOIN`, `DIRNAME`, `BASENAME`, `EXTNAME` (FS I/O blocked in playground mode)
+  - `rt/fs.go`, `rt/fs_test.go`
+- [x] 7.2 `P0` OS & process built-ins: `CWD`, `ARGS`, `PID`, `PLATFORM`, `HOSTNAME`, `CPUS`, `EXEC` (with timeout & output cap; blocked in playground mode)
+  - `rt/os.go`, `rt/os_test.go`
+- [x] 7.3 `P0` Crypto, date/time & core data utilities: `UUID`, `RANDOMHEX`, `HASH`, `HMAC`, `HASHPASSWORD`, `VERIFYPASSWORD`, `BASE64ENCODE`, `BASE64DECODE`, `NOW`, `UNIXTIME`, `UNIXMS`, `FORMATDATE`, `PARSEDATE`, `JSONPARSE`, `JSONSTRINGIFY`, `SPLIT`, `JOIN`, `REPLACE`, `CONTAINS`, `STARTSWITH`, `ENDSWITH`, `INDEXOF`, `KEYS`, `VALUES`, `PUSH`, `POP`, `SLICE`, `SORT`, `REGEXMATCH`, `REGEXREPLACE`
+  - `rt/crypto.go`, `rt/time.go`, `rt/data.go` (+ tests)
+- [x] 7.4 `P0` Concurrency & timers: `SLEEP(ms)`, `SPAWN Fn(args...)`, `EVERY ms CALL Fn` (stopped on graceful shutdown), `PARALLEL ... END PARALLEL`
+  - `rt/concurrency.go`, `internal/compiler/{token,ast,parser,check,codegen}` (+ tests)
+- [x] 7.5 `P0` Compiler wiring, golden tests (`testdata/golden/structured/tier1_*`), and `docs/language.md` documentation for Phase 7 built-ins and concurrency statements

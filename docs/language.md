@@ -354,10 +354,25 @@ PRINT {"total": price * 2}             ' {"total":"39.98"}
 | `ERROR`, `HTTPERROR` | see [Errors](#6-errors) |
 | `NEW(pkg.Type)` | see [Go interop](#go-interop) |
 | `PARAM`, `QUERY`, `HEADER`, `BODY` | see [Classic routes](#classic-routes) |
-| `REQUEST` | see [Testing](#12-testing) (coming in this release) |
+| `REQUEST` | see [Testing](#12-testing) |
 | `CORS`, `RATELIMIT`, `REQUESTLOG`, `APIKEY`, `BEARERJWT` | see [Middleware](#8-middleware) |
-
-`NOW()` is in the spec's built-in list but isn't built yet.
+| `READFILE(path)`, `WRITEFILE(path, data)`, `APPENDFILE(path, data)` | read, write, or append UTF-8 files *(blocked in playground)* |
+| `FILEEXISTS(path)`, `DELETEFILE(path)`, `MKDIR(path)`, `READDIR(path)`, `FILESTAT(path)` | file & directory helpers *(blocked in playground)* |
+| `PATHJOIN(parts...)`, `DIRNAME(p)`, `BASENAME(p)`, `EXTNAME(p)` | cross-platform path manipulation |
+| `CWD()`, `ARGS()`, `PID()`, `HOSTNAME()`, `PLATFORM()`, `CPUS()` | OS & process info *(only `PLATFORM`/`CPUS` allowed in playground)* |
+| `EXEC(cmd [, args [, opts]])` | run subprocess (`{code, stdout, stderr}`; timeout & 1 MB output cap; *blocked in playground*) |
+| `UUID()`, `RANDOMHEX(n)` | RFC 4122 v4 UUID and cryptographically random hex bytes |
+| `HASH(algo, data)`, `HMAC(algo, key, data)` | hex digest (`sha256`, `sha512`, `sha1`, `md5`; HMAC: `sha256`, `sha512`) |
+| `HASHPASSWORD(pw)`, `VERIFYPASSWORD(pw, hash)` | PBKDF2-SHA256 password hashing with random salt & constant-time verification |
+| `BASE64ENCODE(s)`, `BASE64DECODE(s)` | standard Base64 encoding and decoding |
+| `NOW()`, `UNIXTIME()`, `UNIXMS()` | UTC RFC3339 timestamp, Unix seconds, and Unix milliseconds |
+| `FORMATDATE(ts, layout)`, `PARSEDATE(s [, layout])` | UTC date formatting (`"ISO"`, `"DATE"`, `"TIME"`, or Go layout) and parsing |
+| `JSONPARSE(s)`, `JSONSTRINGIFY(v [, indent])` | order-preserving JSON parsing and serialization |
+| `SPLIT(s, sep)`, `JOIN(arr, sep)`, `REPLACE(s, old, new)` | string splitting, joining, and replacement |
+| `CONTAINS(x, y)`, `STARTSWITH(s, p)`, `ENDSWITH(s, p)`, `INDEXOF(x, y)` | substring / element / map-key search (0-based index, `-1` if absent) |
+| `KEYS(m)`, `VALUES(m)`, `PUSH(arr, v)`, `POP(arr)`, `SLICE(arr, start [, end])`, `SORT(arr)` | map & array utilities |
+| `REGEXMATCH(pat, s)`, `REGEXREPLACE(pat, s, repl)` | regular expression matching and replacement |
+| `SLEEP(ms)` | pause the current goroutine for `ms` milliseconds (respects request cancellation) |
 
 ```basic
 PRINT LEN("abc")
@@ -689,7 +704,7 @@ Classic variables are global, so classic handlers run one at a time per program.
 
 Structured handlers run concurrently, each request on its own goroutine. Module-level variables are shared by every request, so writing to them from a handler is a data race.
 
-**(coming in this release)** `SHARED DIM name AS TYPE [= value]`, at the top level of a file, declares a module-level variable that is safe for concurrent access. Changing a plain module-level variable inside a handler produces `?SHARED STATE WARNING IN file:line`. The exact rules are being finished in task 4.3.
+`SHARED DIM name AS TYPE [= value]`, at the top level of a file, declares a module-level variable that is safe for concurrent access. Changing a plain module-level variable inside a handler produces `?SHARED STATE WARNING IN file:line`.
 
 ```basic
 SHARED DIM visits AS INTEGER = 0
@@ -700,6 +715,21 @@ FUNCTION Visit(req)
   visits = visits + 1
   RETURN {"visits": visits}
 END FUNCTION
+```
+
+For explicit concurrency and background jobs:
+
+- `SLEEP(ms)` pauses only the current goroutine/request for `ms` milliseconds (and respects request cancellation / playground deadlines).
+- `SPAWN Fn(args...)` evaluates `args...` immediately and runs `Fn` in a background goroutine with a detached context and panic recovery *(CLI only — blocked in playground)*.
+- `EVERY ms CALL Fn` runs `Fn()` on a recurring interval (`ms >= 10`) in the background and stops cleanly on graceful shutdown *(CLI only — blocked in playground)*.
+- `PARALLEL ... END PARALLEL` runs every statement in the block concurrently, waits for all of them to finish, and re-raises the first error (catchable with `TRY`/`CATCH`).
+
+```basic
+DIM users, orders
+PARALLEL
+  users = FETCH("https://api.example.com/users")
+  orders = FETCH("https://api.example.com/orders")
+END PARALLEL
 ```
 
 ---

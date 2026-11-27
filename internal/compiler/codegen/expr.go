@@ -71,6 +71,68 @@ var builtins = map[string]builtin{
 	"VAL":   {fn: "rt.Val", min: 1, max: 1, t: tAny},
 	"INT":   {fn: "rt.Int", min: 1, max: 1, t: tInt},
 	"ABS":   {fn: "rt.Abs", min: 1, max: 1, t: tAny},
+
+	// Phase 7 — File system & paths (rt/fs.go).
+	"READFILE":   {fn: "rt.ReadFile", min: 1, max: 1, t: tStr, args: []typ{tStr}},
+	"WRITEFILE":  {fn: "rt.WriteFile", min: 2, max: 2, t: tAny, args: []typ{tStr, tStr}},
+	"APPENDFILE": {fn: "rt.AppendFile", min: 2, max: 2, t: tAny, args: []typ{tStr, tStr}},
+	"FILEEXISTS": {fn: "rt.FileExists", min: 1, max: 1, t: tBool, args: []typ{tStr}},
+	"DELETEFILE": {fn: "rt.DeleteFile", min: 1, max: 1, t: tAny, args: []typ{tStr}},
+	"MKDIR":      {fn: "rt.Mkdir", min: 1, max: 1, t: tAny, args: []typ{tStr}},
+	"READDIR":    {fn: "rt.ReadDir", min: 1, max: 1, t: tAny, args: []typ{tStr}},
+	"FILESTAT":   {fn: "rt.FileStat", min: 1, max: 1, t: tAny, args: []typ{tStr}},
+	"PATHJOIN":   {fn: "rt.PathJoin", min: 1, max: -1, t: tStr},
+	"DIRNAME":    {fn: "rt.DirName", min: 1, max: 1, t: tStr, args: []typ{tStr}},
+	"BASENAME":   {fn: "rt.BaseName", min: 1, max: 1, t: tStr, args: []typ{tStr}},
+	"EXTNAME":    {fn: "rt.ExtName", min: 1, max: 1, t: tStr, args: []typ{tStr}},
+
+	// Phase 7 — OS & process (rt/os.go).
+	"CWD":      {fn: "rt.Cwd", min: 0, max: 0, t: tStr},
+	"ARGS":     {fn: "rt.Args", min: 0, max: 0, t: tAny},
+	"PID":      {fn: "rt.Pid", min: 0, max: 0, t: tInt},
+	"PLATFORM": {fn: "rt.Platform", min: 0, max: 0, t: tStr},
+	"HOSTNAME": {fn: "rt.Hostname", min: 0, max: 0, t: tStr},
+	"CPUS":     {fn: "rt.CPUs", min: 0, max: 0, t: tInt},
+	"EXEC":     {fn: "rt.Exec", min: 1, max: 3, t: tAny, ctx: true, args: []typ{tStr}},
+
+	// Phase 7 — Crypto (rt/crypto.go).
+	"UUID":           {fn: "rt.UUID", min: 0, max: 0, t: tStr},
+	"RANDOMHEX":      {fn: "rt.RandomHex", min: 1, max: 1, t: tStr},
+	"HASH":           {fn: "rt.Hash", min: 2, max: 2, t: tStr, args: []typ{tStr, tStr}},
+	"HMAC":           {fn: "rt.HMAC", min: 3, max: 3, t: tStr, args: []typ{tStr, tStr, tStr}},
+	"HASHPASSWORD":   {fn: "rt.HashPassword", min: 1, max: 1, t: tStr, args: []typ{tStr}},
+	"VERIFYPASSWORD": {fn: "rt.VerifyPassword", min: 2, max: 2, t: tBool, args: []typ{tStr, tStr}},
+	"BASE64ENCODE":   {fn: "rt.Base64Encode", min: 1, max: 1, t: tStr, args: []typ{tStr}},
+	"BASE64DECODE":   {fn: "rt.Base64Decode", min: 1, max: 1, t: tStr, args: []typ{tStr}},
+
+	// Phase 7 — Date & time (rt/time.go).
+	"NOW":        {fn: "rt.Now", min: 0, max: 0, t: tStr},
+	"UNIXTIME":   {fn: "rt.UnixTime", min: 0, max: 0, t: tInt},
+	"UNIXMS":     {fn: "rt.UnixMs", min: 0, max: 0, t: tInt},
+	"FORMATDATE": {fn: "rt.FormatDate", min: 2, max: 2, t: tStr, args: []typ{tAny, tStr}},
+	"PARSEDATE":  {fn: "rt.ParseDate", min: 1, max: 2, t: tInt, args: []typ{tStr}},
+
+	// Phase 7 — Data, strings, arrays, maps, JSON & regex (rt/data.go).
+	"JSONPARSE":     {fn: "rt.JSONParse", min: 1, max: 1, t: tAny, args: []typ{tStr}},
+	"JSONSTRINGIFY": {fn: "rt.JSONStringify", min: 1, max: 2, t: tStr},
+	"SPLIT":         {fn: "rt.Split", min: 2, max: 2, t: tAny, args: []typ{tStr, tStr}},
+	"JOIN":          {fn: "rt.Join", min: 2, max: 2, t: tStr, args: []typ{tAny, tStr}},
+	"REPLACE":       {fn: "rt.Replace", min: 3, max: 3, t: tStr, args: []typ{tStr, tStr, tStr}},
+	"CONTAINS":      {fn: "rt.Contains", min: 2, max: 2, t: tBool},
+	"STARTSWITH":    {fn: "rt.StartsWith", min: 2, max: 2, t: tBool, args: []typ{tStr, tStr}},
+	"ENDSWITH":      {fn: "rt.EndsWith", min: 2, max: 2, t: tBool, args: []typ{tStr, tStr}},
+	"INDEXOF":       {fn: "rt.IndexOf", min: 2, max: 2, t: tInt},
+	"KEYS":          {fn: "rt.Keys", min: 1, max: 1, t: tAny},
+	"VALUES":        {fn: "rt.Values", min: 1, max: 1, t: tAny},
+	"PUSH":          {fn: "rt.Push", min: 2, max: 2, t: tInt},
+	"POP":           {fn: "rt.Pop", min: 1, max: 1, t: tAny},
+	"SLICE":         {fn: "rt.Slice", min: 2, max: 3, t: tAny},
+	"SORT":          {fn: "rt.Sort", min: 1, max: 1, t: tAny},
+	"REGEXMATCH":    {fn: "rt.RegexMatch", min: 2, max: 2, t: tBool, args: []typ{tStr, tStr}},
+	"REGEXREPLACE":  {fn: "rt.RegexReplace", min: 3, max: 3, t: tStr, args: []typ{tStr, tStr, tStr}},
+
+	// Phase 7 — Concurrency (rt/concurrency.go).
+	"SLEEP": {fn: "rt.Sleep", min: 1, max: 1, t: tAny, ctx: true},
 }
 
 // laterBuiltins are the language.md built-ins that later tasks add.
@@ -83,7 +145,7 @@ func isBuiltin(name string) bool {
 	_, ok := builtins[name]
 	_, later := laterBuiltins[name]
 	_, mw := middlewareFactories[name]
-	return ok || later || mw || name == "NOW"
+	return ok || later || mw
 }
 
 // lookup finds a variable or constant visible in sc.
@@ -246,10 +308,6 @@ func (g *gen) call(e *ast.CallExpr, sc *scope, asStmt bool) gexpr {
 	}
 	if task, ok := laterBuiltins[name]; ok {
 		g.todo(e.At, task, name)
-		return bad
-	}
-	if name == "NOW" {
-		g.errorf(e.At, diag.NotImplemented, "NOW is not built yet (no task in .kiro/specs/rip-basic/tasks.md covers DATE values yet)")
 		return bad
 	}
 	if g.file.Mode == token.Classic {
