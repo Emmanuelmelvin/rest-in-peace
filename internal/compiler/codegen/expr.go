@@ -121,9 +121,15 @@ func (g *gen) expr(e ast.Expr, sc *scope) gexpr {
 		if ge, ok := g.goMember(e, sc); ok {
 			return ge
 		}
+		if ge, ok := g.sharedMemberHook(e, sc); ok {
+			return ge
+		}
 		x := g.expr(e.X, sc)
 		return gexpr{"rt.Get(" + x.code + ", " + strconv.Quote(e.Name) + ")", tAny, false}
 	case *ast.IndexExpr:
+		if ge, ok := g.sharedIndexHook(e, sc); ok {
+			return ge
+		}
 		x := g.expr(e.X, sc)
 		i := g.expr(e.Index, sc)
 		return gexpr{"rt.Index(" + x.code + ", " + i.code + ")", tAny, false}
@@ -164,6 +170,9 @@ func (g *gen) number(e *ast.NumberLit) gexpr {
 func (g *gen) ident(e *ast.Ident, sc *scope) gexpr {
 	name := canon(e.Name)
 	if v := g.lookup(name, sc); v != nil {
+		if ge, ok := g.sharedLoadHook(v); ok {
+			return ge
+		}
 		return gexpr{v.goName, v.t, v.goConst != ""}
 	}
 	switch {
