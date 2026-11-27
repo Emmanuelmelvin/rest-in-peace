@@ -31,11 +31,7 @@ var playgroundTransport = sync.OnceValue(func() http.RoundTripper {
 })
 
 // applyPlaygroundDeadline gives a request's Ctx the deadline that Guard
-// checks. It does nothing outside the playground.
-//
-// TODO(task 5.3): call it from App.serveRequest in rt/app.go, right after
-// NewCtx (one line, landed at merge time because app.go belongs to another
-// track). Until then the host's watchdog is what answers 508.
+// checks. It does nothing outside the playground. Called from App.serveRequest.
 func applyPlaygroundDeadline(c *Ctx) {
 	if isPlayground() {
 		c.SetDeadline(time.Now().Add(PlaygroundRequestTimeout))
