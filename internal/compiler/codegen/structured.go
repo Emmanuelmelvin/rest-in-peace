@@ -615,16 +615,9 @@ func (g *gen) laterStmt(o *out, s ast.Stmt, sc *scope) bool {
 	case *ast.DBConnectStmt, *ast.TransactionStmt:
 		g.dbStmt(o, s, sc)
 		return true
+	case *ast.TestDecl, *ast.ExpectStmt:
+		g.testStmt(o, s, sc) // testing.go (task 4.2)
+		return true
 	}
-	task, what := "", ""
-	switch s.(type) {
-	case *ast.TestDecl:
-		task, what = "4.2", "TEST"
-	case *ast.ExpectStmt:
-		task, what = "4.2", "EXPECT"
-	default:
-		return false
-	}
-	g.todo(s.Pos(), task, what)
-	return true
+	return false
 }

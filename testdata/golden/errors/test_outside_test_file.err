@@ -1,0 +1,1 @@
+?SYNTAX ERROR IN test_outside_test_file.bas:4 — TEST blocks go in test files named *.test.bas, like tests/main.test.bas; move this TEST out of test_outside_test_file.bas

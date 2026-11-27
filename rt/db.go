@@ -103,6 +103,9 @@ func mustGetDB(normName string) DB {
 // Supported schemes: postgres://, postgresql://, and sqlite://.
 // Each opened pool's Close is registered with c.App().OnShutdown (Requirement 14.5).
 func DBConnect(c *Ctx, rawURL string, name string) {
+	if testDBConnect(c, rawURL, name) { // rip test: open the test database instead (expect.go)
+		return
+	}
 	trimmed := strings.TrimSpace(rawURL)
 	if trimmed == "" {
 		panic(Errorf(KindDatabase, `DBCONNECT needs a database URL like "postgres://…" or "sqlite://:memory:"`))
