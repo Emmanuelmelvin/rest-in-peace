@@ -180,6 +180,32 @@ func TestDBEndToEnd(t *testing.T) {
 			),
 			stdout: "HELLO FROM 1975\n",
 		},
+		{
+			name: "DBINSERT, DBFIND, DBFINDONE, DBUPDATE, and DBDELETE helpers",
+			prog: structured("crud.bas",
+				dbConnect(1, str("sqlite://:memory:"), ""),
+				do(2, call("SQLEXEC", str("CREATE TABLE tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, done INT NOT NULL)"))),
+				let(3, id("t1"), call("DBINSERT", str("tasks"), &ast.MapLit{
+					At:     at(3),
+					Keys:   []string{"title", "done"},
+					Values: []ast.Expr{str("ship"), num(0)},
+				})),
+				do(4, call("DBINSERT", str("tasks"), &ast.MapLit{
+					At:     at(4),
+					Keys:   []string{"title", "done"},
+					Values: []ast.Expr{str("demo"), num(1)},
+				})),
+				do(5, call("DBUPDATE", str("tasks"),
+					&ast.MapLit{At: at(5), Keys: []string{"done"}, Values: []ast.Expr{num(1)}},
+					&ast.MapLit{At: at(5), Keys: []string{"id"}, Values: []ast.Expr{mem(id("t1"), "id")}},
+				)),
+				let(6, id("all"), call("DBFIND", str("tasks"), &ast.MapLit{At: at(6), Keys: []string{"done"}, Values: []ast.Expr{num(1)}})),
+				let(7, id("one"), call("DBFINDONE", str("tasks"), &ast.MapLit{At: at(7), Keys: []string{"id"}, Values: []ast.Expr{mem(id("t1"), "id")}})),
+				let(8, id("del"), call("DBDELETE", str("tasks"), &ast.MapLit{At: at(8), Keys: []string{"title"}, Values: []ast.Expr{str("demo")}})),
+				pr(9, call("LEN", id("all")), str(" "), mem(id("one"), "title"), str(" "), id("del")),
+			),
+			stdout: "2 ship 1\n",
+		},
 	}
 
 	for _, tc := range cases {

@@ -695,3 +695,128 @@ func TestDecimalEqualHelperSanity(t *testing.T) {
 		t.Fatalf("expected %v == %v", d1, d2)
 	}
 }
+
+func TestDBCRUDHelpers(t *testing.T) {
+	defer ResetDBs()
+	ResetDBs()
+
+	c := NewCtx(context.Background())
+	DBConnect(c, "sqlite://:memory:", "")
+	SQLExec(c, "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, balance NUMERIC(12,2) NOT NULL)")
+
+	// DBInsert returns inserted row via RETURNING *.
+	m1 := NewMap()
+	m1.Set("name", "Ada")
+	m1.Set("email", "ada@example.com")
+	m1.Set("balance", DecimalOf("99.50"))
+	u1 := DBInsert(c, "users", m1)
+	if got := Get(u1, "name"); got != "Ada" {
+		t.Fatalf("DBInsert name = %#v, want Ada", got)
+	}
+	if got := ToString(Get(u1, "balance")); got != "99.50" {
+		t.Fatalf("DBInsert balance = %q, want 99.50", got)
+	}
+	id1 := Get(u1, "id")
+
+	m2 := NewMap()
+	m2.Set("name", "Grace")
+	m2.Set("email", nil)
+	m2.Set("balance", DecimalOf("200.00"))
+	DBInsert(c, "users", m2)
+
+	// DBFind with no filter, nil filter, and empty map returns all rows.
+	if rows := DBFind(c, "users"); len(rows.Items) != 2 {
+		t.Fatalf("DBFind all = %d, want 2", len(rows.Items))
+	}
+	if rows := DBFind(c, "users", nil); len(rows.Items) != 2 {
+		t.Fatalf("DBFind nil = %d, want 2", len(rows.Items))
+	}
+	if rows := DBFind(c, "users", NewMap()); len(rows.Items) != 2 {
+		t.Fatalf("DBFind empty map = %d, want 2", len(rows.Items))
+	}
+
+	// DBFind with NIL value generates IS NULL.
+	noEmail := NewMap()
+	noEmail.Set("email", nil)
+	nullRows := DBFind(c, "users", noEmail)
+	if len(nullRows.Items) != 1 || Get(nullRows.Items[0], "name") != "Grace" {
+		t.Fatalf("DBFind IS NULL = %#v, want Grace", nullRows.Items)
+	}
+
+	// DBFindOne returns first match or nil.
+	byID := NewMap()
+	byID.Set("id", id1)
+	found := DBFindOne(c, "users", byID)
+	if Get(found, "name") != "Ada" {
+		t.Fatalf("DBFindOne = %#v, want Ada", found)
+	}
+	missing := NewMap()
+	missing.Set("name", "Nobody")
+	if got := DBFindOne(c, "users", missing); got != nil {
+		t.Fatalf("DBFindOne missing = %#v, want nil", got)
+	}
+
+	// DBUpdate updates matching rows and works inside TRANSACTION.
+	patch := NewMap()
+	patch.Set("balance", DecimalOf("150.25"))
+	Tx(c, "", func() {
+		if n := DBUpdate(c, "users", patch, byID); n != 1 {
+			t.Fatalf("DBUpdate affected = %d, want 1", n)
+		}
+	})
+	if got := ToString(Get(DBFindOne(c, "users", byID), "balance")); got != "150.25" {
+		t.Fatalf("after DBUpdate balance = %q, want 150.25", got)
+	}
+
+	// Rollback works with DBDelete inside TRANSACTION.
+	_ = catchError(t, func() {
+		Tx(c, "", func() {
+			DBDelete(c, "users", byID)
+			panic(Errorf(KindUser, "rollback"))
+		})
+	})
+	if DBFindOne(c, "users", byID) == nil {
+		t.Fatalf("expected row to survive rolled-back DBDelete")
+	}
+
+	// DBDelete removes matching row.
+	if n := DBDelete(c, "users", byID); n != 1 {
+		t.Fatalf("DBDelete affected = %d, want 1", n)
+	}
+	if rows := DBFind(c, "users"); len(rows.Items) != 1 {
+		t.Fatalf("after DBDelete rows = %d, want 1", len(rows.Items))
+	}
+
+	// Identifier validation blocks SQL injection in table and column names.
+	t.Run("rejects unsafe table and column names", func(t *testing.T) {
+		badTable := catchError(t, func() { DBFind(c, "users; DROP TABLE users") })
+		if badTable == nil || badTable.Kind != KindDatabase {
+			t.Fatalf("bad table got %#v, want DATABASE error", badTable)
+		}
+		badColMap := NewMap()
+		badColMap.Set("id = 1 OR 1=1 --", int64(1))
+		badCol := catchError(t, func() { DBFind(c, "users", badColMap) })
+		if badCol == nil || badCol.Kind != KindDatabase {
+			t.Fatalf("bad column got %#v, want DATABASE error", badCol)
+		}
+	})
+
+	// Refuses empty data/where maps and non-map arguments.
+	t.Run("rejects empty maps and wrong types", func(t *testing.T) {
+		if e := catchError(t, func() { DBInsert(c, "users", NewMap()) }); e == nil || e.Kind != KindDatabase {
+			t.Fatalf("empty DBInsert got %#v, want DATABASE error", e)
+		}
+		if e := catchError(t, func() { DBUpdate(c, "users", patch, NewMap()) }); e == nil || e.Kind != KindDatabase {
+			t.Fatalf("empty DBUpdate where got %#v, want DATABASE error", e)
+		}
+		if e := catchError(t, func() { DBDelete(c, "users", NewMap()) }); e == nil || e.Kind != KindDatabase {
+			t.Fatalf("empty DBDelete where got %#v, want DATABASE error", e)
+		}
+		if e := catchError(t, func() { DBInsert(c, "users", "nope") }); e == nil || e.Kind != KindTypeMismatch {
+			t.Fatalf("non-map DBInsert got %#v, want TYPE MISMATCH", e)
+		}
+		if e := catchError(t, func() { DBFind(c, "users", int64(1)) }); e == nil || e.Kind != KindTypeMismatch {
+			t.Fatalf("non-map DBFind got %#v, want TYPE MISMATCH", e)
+		}
+	})
+}

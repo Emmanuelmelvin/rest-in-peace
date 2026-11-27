@@ -201,6 +201,144 @@ func SQLExec(c *Ctx, query string, args ...Value) int64 {
 	return n
 }
 
+// quoteSQLIdent validates a table or column identifier against
+// ^[A-Za-z_][A-Za-z0-9_]*$ and returns it double-quoted so user input can never
+// inject SQL through table or column names.
+func quoteSQLIdent(fnName, kind, name string) string {
+	if name == "" {
+		panic(Errorf(KindDatabase, "%s: %s name cannot be empty", fnName, kind))
+	}
+	for i := 0; i < len(name); i++ {
+		b := name[i]
+		isLetter := (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || b == '_'
+		isDigit := b >= '0' && b <= '9'
+		if i == 0 && !isLetter {
+			panic(Errorf(KindDatabase, "%s: invalid %s name %q — use letters, digits, and underscores only", fnName, kind, name))
+		}
+		if i > 0 && !isLetter && !isDigit {
+			panic(Errorf(KindDatabase, "%s: invalid %s name %q — use letters, digits, and underscores only", fnName, kind, name))
+		}
+	}
+	return `"` + name + `"`
+}
+
+func requireNonEmptyMap(fnName, role string, v Value) *Map {
+	m, ok := v.(*Map)
+	if !ok || m == nil {
+		panic(Errorf(KindTypeMismatch, `%s expects a MAP for %s, got %s`, fnName, role, TypeName(v)))
+	}
+	if m.Len() == 0 {
+		panic(Errorf(KindDatabase, "%s: %s map cannot be empty", fnName, role))
+	}
+	return m
+}
+
+func optionalWhereMap(fnName string, where []Value) *Map {
+	if len(where) == 0 || where[0] == nil {
+		return nil
+	}
+	m, ok := where[0].(*Map)
+	if !ok {
+		panic(Errorf(KindTypeMismatch, "%s expects a MAP for filter conditions, got %s", fnName, TypeName(where[0])))
+	}
+	if m == nil || m.Len() == 0 {
+		return nil
+	}
+	return m
+}
+
+func buildWhereClause(fnName string, where *Map, startIdx int) (string, []Value) {
+	if where == nil || where.Len() == 0 {
+		return "", nil
+	}
+	keys := where.Keys()
+	parts := make([]string, 0, len(keys))
+	args := make([]Value, 0, len(keys))
+	idx := startIdx
+	for _, k := range keys {
+		col := quoteSQLIdent(fnName, "column", k)
+		v, _ := where.Get(k)
+		if v == nil {
+			parts = append(parts, col+" IS NULL")
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s = $%d", col, idx))
+		args = append(args, v)
+		idx++
+	}
+	return " WHERE " + strings.Join(parts, " AND "), args
+}
+
+// DBInsert implements DBINSERT(table, dataMap), inserting one row and returning
+// the inserted row map via RETURNING *.
+func DBInsert(c *Ctx, table string, data Value) Value {
+	tbl := quoteSQLIdent("DBINSERT", "table", table)
+	m := requireNonEmptyMap("DBINSERT", "row data", data)
+	keys := m.Keys()
+	cols := make([]string, len(keys))
+	placeholders := make([]string, len(keys))
+	args := make([]Value, len(keys))
+	for i, k := range keys {
+		cols[i] = quoteSQLIdent("DBINSERT", "column", k)
+		placeholders[i] = "$" + strconv.Itoa(i+1)
+		v, _ := m.Get(k)
+		args[i] = v
+	}
+	q := "INSERT INTO " + tbl + " (" + strings.Join(cols, ", ") + ") VALUES (" + strings.Join(placeholders, ", ") + ") RETURNING *"
+	return SQLOne(c, q, args...)
+}
+
+// DBFind implements DBFIND(table [, whereMap]), returning an ARRAY of matching
+// row maps.
+func DBFind(c *Ctx, table string, where ...Value) *Array {
+	tbl := quoteSQLIdent("DBFIND", "table", table)
+	wm := optionalWhereMap("DBFIND", where)
+	clause, args := buildWhereClause("DBFIND", wm, 1)
+	return SQL(c, "SELECT * FROM "+tbl+clause, args...)
+}
+
+// DBFindOne implements DBFINDONE(table [, whereMap]), returning the first
+// matching row map or NIL when no row matches.
+func DBFindOne(c *Ctx, table string, where ...Value) Value {
+	tbl := quoteSQLIdent("DBFINDONE", "table", table)
+	wm := optionalWhereMap("DBFINDONE", where)
+	clause, args := buildWhereClause("DBFINDONE", wm, 1)
+	return SQLOne(c, "SELECT * FROM "+tbl+clause+" LIMIT 1", args...)
+}
+
+// DBUpdate implements DBUPDATE(table, dataMap, whereMap), updating matching
+// rows and returning the affected row count. An empty whereMap is rejected to
+// prevent accidental full-table updates.
+func DBUpdate(c *Ctx, table string, data Value, where Value) int64 {
+	tbl := quoteSQLIdent("DBUPDATE", "table", table)
+	dm := requireNonEmptyMap("DBUPDATE", "update data", data)
+	wm := requireNonEmptyMap("DBUPDATE", "where filter", where)
+
+	dkeys := dm.Keys()
+	sets := make([]string, len(dkeys))
+	args := make([]Value, 0, len(dkeys)+wm.Len())
+	for i, k := range dkeys {
+		col := quoteSQLIdent("DBUPDATE", "column", k)
+		sets[i] = fmt.Sprintf("%s = $%d", col, i+1)
+		v, _ := dm.Get(k)
+		args = append(args, v)
+	}
+	clause, wargs := buildWhereClause("DBUPDATE", wm, len(dkeys)+1)
+	args = append(args, wargs...)
+	q := "UPDATE " + tbl + " SET " + strings.Join(sets, ", ") + clause
+	return SQLExec(c, q, args...)
+}
+
+// DBDelete implements DBDELETE(table, whereMap), deleting matching rows and
+// returning the affected row count. An empty whereMap is rejected to prevent
+// accidental full-table deletes.
+func DBDelete(c *Ctx, table string, where Value) int64 {
+	tbl := quoteSQLIdent("DBDELETE", "table", table)
+	wm := requireNonEmptyMap("DBDELETE", "where filter", where)
+	clause, args := buildWhereClause("DBDELETE", wm, 1)
+	return SQLExec(c, "DELETE FROM "+tbl+clause, args...)
+}
+
 // Tx implements TRANSACTION [ON name] … END TRANSACTION (Requirement 9.5).
 // The transaction is bound to c so every SQL, SQLOne, and SQLExec call made
 // while body runs — including inside helper functions — uses it.

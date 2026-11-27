@@ -45,9 +45,14 @@ var builtins = map[string]builtin{
 	"ERROR":     {fn: "rt.NewError", min: 1, max: 1, t: tAny},
 	"HTTPERROR": {fn: "rt.NewHTTPError", min: 2, max: 3, t: tAny},
 	// Database queries (task 3.1, rt/db.go). max: -1 means variadic.
-	"SQL":     {fn: "rt.SQL", min: 1, max: -1, t: tAny, ctx: true, args: []typ{tStr}},
-	"SQLONE":  {fn: "rt.SQLOne", min: 1, max: -1, t: tAny, ctx: true, args: []typ{tStr}},
-	"SQLEXEC": {fn: "rt.SQLExec", min: 1, max: -1, t: tInt, ctx: true, args: []typ{tStr}},
+	"SQL":       {fn: "rt.SQL", min: 1, max: -1, t: tAny, ctx: true, args: []typ{tStr}},
+	"SQLONE":    {fn: "rt.SQLOne", min: 1, max: -1, t: tAny, ctx: true, args: []typ{tStr}},
+	"SQLEXEC":   {fn: "rt.SQLExec", min: 1, max: -1, t: tInt, ctx: true, args: []typ{tStr}},
+	"DBINSERT":  {fn: "rt.DBInsert", min: 2, max: 2, t: tAny, ctx: true, args: []typ{tStr, tAny}},
+	"DBFIND":    {fn: "rt.DBFind", min: 1, max: 2, t: tAny, ctx: true, args: []typ{tStr}},
+	"DBFINDONE": {fn: "rt.DBFindOne", min: 1, max: 2, t: tAny, ctx: true, args: []typ{tStr}},
+	"DBUPDATE":  {fn: "rt.DBUpdate", min: 3, max: 3, t: tInt, ctx: true, args: []typ{tStr, tAny, tAny}},
+	"DBDELETE":  {fn: "rt.DBDelete", min: 2, max: 2, t: tInt, ctx: true, args: []typ{tStr, tAny}},
 	// Outbound HTTP (task 3.7, rt/fetch.go).
 	"FETCH": {fn: "rt.Fetch", min: 1, max: 2, t: tAny, ctx: true, args: []typ{tStr}},
 
