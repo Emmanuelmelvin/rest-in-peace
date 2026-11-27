@@ -1,5 +1,9 @@
+# Standalone build from examples/invoicing/:
+#   docker build -t rip-invoicing .
+# For local repo builds with Postgres, see deploy/invoicing/docker-compose.yml.
+
 # Build stage: BASIC → Go → one static binary.
-FROM golang:1.24 AS build
+FROM golang:1.26 AS build
 RUN go install github.com/Emmanuelmelvin/rest-in-peace/cmd/rip@latest
 WORKDIR /src
 COPY . .
