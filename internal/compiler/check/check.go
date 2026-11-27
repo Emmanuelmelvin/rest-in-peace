@@ -25,6 +25,26 @@ var builtins = map[string]bool{
 	"ERROR": true, "HTTPERROR": true, "NEW": true,
 	// Built-in middleware.
 	"CORS": true, "RATELIMIT": true, "REQUESTLOG": true, "APIKEY": true, "BEARERJWT": true,
+	// Phase 7 — File system & paths (rt/fs.go).
+	"READFILE": true, "WRITEFILE": true, "APPENDFILE": true, "FILEEXISTS": true,
+	"DELETEFILE": true, "MKDIR": true, "READDIR": true, "FILESTAT": true,
+	"PATHJOIN": true, "DIRNAME": true, "BASENAME": true, "EXTNAME": true,
+	// Phase 7 — OS & process (rt/os.go).
+	"CWD": true, "ARGS": true, "PID": true, "PLATFORM": true,
+	"HOSTNAME": true, "CPUS": true, "EXEC": true,
+	// Phase 7 — Crypto (rt/crypto.go).
+	"UUID": true, "RANDOMHEX": true, "HASH": true, "HMAC": true,
+	"HASHPASSWORD": true, "VERIFYPASSWORD": true, "BASE64ENCODE": true, "BASE64DECODE": true,
+	// Phase 7 — Date & time (rt/time.go; NOW is above).
+	"UNIXTIME": true, "UNIXMS": true, "FORMATDATE": true, "PARSEDATE": true,
+	// Phase 7 — Data, strings, arrays, maps, JSON & regex (rt/data.go).
+	"JSONPARSE": true, "JSONSTRINGIFY": true,
+	"SPLIT": true, "JOIN": true, "REPLACE": true,
+	"CONTAINS": true, "STARTSWITH": true, "ENDSWITH": true, "INDEXOF": true,
+	"KEYS": true, "VALUES": true, "PUSH": true, "POP": true, "SLICE": true, "SORT": true,
+	"REGEXMATCH": true, "REGEXREPLACE": true,
+	// Phase 7 — Concurrency (rt/concurrency.go).
+	"SLEEP": true,
 }
 
 // classicBuiltins are HTTP request helpers available only in classic mode.
@@ -281,6 +301,8 @@ func (c *checker) collectClassicDecls(stmts []ast.Stmt) {
 			c.collectClassicDecls(st.Catch)
 			c.collectClassicDecls(st.Finally)
 		case *ast.TransactionStmt:
+			c.collectClassicDecls(st.Body)
+		case *ast.ParallelStmt:
 			c.collectClassicDecls(st.Body)
 		}
 	}
@@ -543,6 +565,33 @@ func (c *checker) checkStmt(s ast.Stmt) {
 		c.checkExpr(st.URL)
 
 	case *ast.TransactionStmt:
+		for _, b := range st.Body {
+			c.checkStmt(b)
+		}
+
+	case *ast.SpawnStmt:
+		c.checkCall(st.Call, true)
+
+	case *ast.EveryStmt:
+		c.checkExpr(st.Interval)
+		if c.classic {
+			c.errorf(st.At, diag.Syntax, "EVERY only works in structured mode; remove the line numbers to use it")
+		} else if st.Handler != "" {
+			c.checkHandlerRef(st.HandlerAt, st.Handler)
+			if sym := c.modScope.lookup(st.Handler); sym != nil && sym.fn != nil {
+				minArgs := 0
+				for _, p := range sym.fn.Params {
+					if p.Default == nil {
+						minArgs++
+					}
+				}
+				if minArgs > 0 {
+					c.errorf(st.HandlerAt, diag.Syntax, "%s is called by EVERY, so it cannot require parameters: SUB %s() or FUNCTION %s()", sym.fn.Name, sym.fn.Name, sym.fn.Name)
+				}
+			}
+		}
+
+	case *ast.ParallelStmt:
 		for _, b := range st.Body {
 			c.checkStmt(b)
 		}

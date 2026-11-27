@@ -270,6 +270,20 @@ type (
 		X     Expr
 		Lines []int
 	}
+	SpawnStmt struct {
+		At   token.Pos
+		Call *CallExpr
+	}
+	EveryStmt struct {
+		At        token.Pos
+		Interval  Expr
+		Handler   string
+		HandlerAt token.Pos
+	}
+	ParallelStmt struct {
+		At   token.Pos
+		Body []Stmt
+	}
 )
 
 func (n *Ident) Pos() token.Pos      { return n.At }
@@ -328,6 +342,9 @@ func (n *ExpectStmt) Pos() token.Pos      { return n.At }
 func (n *GotoStmt) Pos() token.Pos        { return n.At }
 func (n *GosubStmt) Pos() token.Pos       { return n.At }
 func (n *OnGotoStmt) Pos() token.Pos      { return n.At }
+func (n *SpawnStmt) Pos() token.Pos       { return n.At }
+func (n *EveryStmt) Pos() token.Pos       { return n.At }
+func (n *ParallelStmt) Pos() token.Pos    { return n.At }
 
 func (*FuncDecl) stmtNode()        {}
 func (*ConstDecl) stmtNode()       {}
@@ -359,3 +376,6 @@ func (*ExpectStmt) stmtNode()      {}
 func (*GotoStmt) stmtNode()        {}
 func (*GosubStmt) stmtNode()       {}
 func (*OnGotoStmt) stmtNode()      {}
+func (*SpawnStmt) stmtNode()       {}
+func (*EveryStmt) stmtNode()       {}
+func (*ParallelStmt) stmtNode()    {}
