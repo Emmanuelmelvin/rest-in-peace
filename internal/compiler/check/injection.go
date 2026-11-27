@@ -359,10 +359,10 @@ func (a *injectionAnalyzer) isCallTainted(call *ast.CallExpr, env *taintEnv) boo
 	return false
 }
 
-// isSQLBuiltin reports whether name is SQL, SQLONE or SQLEXEC.
+// isSQLBuiltin reports whether name is SQL, SQLONE, SQLEXEC, or their *ARGS variants.
 func isSQLBuiltin(name string) bool {
 	switch strings.ToUpper(name) {
-	case "SQL", "SQLONE", "SQLEXEC":
+	case "SQL", "SQLONE", "SQLEXEC", "SQLARGS", "SQLONEARGS", "SQLEXECARGS":
 		return true
 	}
 	return false
