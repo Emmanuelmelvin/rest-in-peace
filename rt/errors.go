@@ -22,6 +22,7 @@ const (
 	KindGo                 Kind = "GO"   // error returned by a Go package
 	KindEternalLoop        Kind = "ETERNAL LOOP"
 	KindExpectFailed       Kind = "EXPECT FAILED"
+	KindNotAllowed         Kind = "NOT ALLOWED"
 	KindInternal           Kind = "INTERNAL"
 )
 
