@@ -45,9 +45,12 @@ var builtins = map[string]builtin{
 	"ERROR":     {fn: "rt.NewError", min: 1, max: 1, t: tAny},
 	"HTTPERROR": {fn: "rt.NewHTTPError", min: 2, max: 3, t: tAny},
 	// Database queries (task 3.1, rt/db.go). max: -1 means variadic.
-	"SQL":     {fn: "rt.SQL", min: 1, max: -1, t: tAny, ctx: true, args: []typ{tStr}},
-	"SQLONE":  {fn: "rt.SQLOne", min: 1, max: -1, t: tAny, ctx: true, args: []typ{tStr}},
-	"SQLEXEC": {fn: "rt.SQLExec", min: 1, max: -1, t: tInt, ctx: true, args: []typ{tStr}},
+	"SQL":         {fn: "rt.SQL", min: 1, max: -1, t: tAny, ctx: true, args: []typ{tStr}},
+	"SQLONE":      {fn: "rt.SQLOne", min: 1, max: -1, t: tAny, ctx: true, args: []typ{tStr}},
+	"SQLEXEC":     {fn: "rt.SQLExec", min: 1, max: -1, t: tInt, ctx: true, args: []typ{tStr}},
+	"SQLARGS":     {fn: "rt.SQLArgs", min: 2, max: 2, t: tAny, ctx: true, args: []typ{tStr, tAny}},
+	"SQLONEARGS":  {fn: "rt.SQLOneArgs", min: 2, max: 2, t: tAny, ctx: true, args: []typ{tStr, tAny}},
+	"SQLEXECARGS": {fn: "rt.SQLExecArgs", min: 2, max: 2, t: tInt, ctx: true, args: []typ{tStr, tAny}},
 	// Outbound HTTP (task 3.7, rt/fetch.go).
 	"FETCH": {fn: "rt.Fetch", min: 1, max: 2, t: tAny, ctx: true, args: []typ{tStr}},
 

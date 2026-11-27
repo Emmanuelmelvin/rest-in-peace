@@ -204,6 +204,38 @@ func SQLExec(c *Ctx, query string, args ...Value) int64 {
 	return n
 }
 
+func unpackSQLArgs(fnName string, params Value) []Value {
+	if params == nil {
+		return nil
+	}
+	arr, ok := params.(*Array)
+	if !ok {
+		panic(Errorf(KindTypeMismatch, "%s expects an ARRAY of parameters as its second argument, got %s", fnName, TypeName(params)))
+	}
+	if arr == nil {
+		return nil
+	}
+	return arr.Items
+}
+
+// SQLArgs implements SQLARGS(query, paramsArray), running SQL with a dynamic
+// ARRAY of bind parameters (for dynamic WHERE clauses and reusable helpers).
+func SQLArgs(c *Ctx, query string, params Value) *Array {
+	return SQL(c, query, unpackSQLArgs("SQLARGS", params)...)
+}
+
+// SQLOneArgs implements SQLONEARGS(query, paramsArray), running SQLONE with a
+// dynamic ARRAY of bind parameters.
+func SQLOneArgs(c *Ctx, query string, params Value) Value {
+	return SQLOne(c, query, unpackSQLArgs("SQLONEARGS", params)...)
+}
+
+// SQLExecArgs implements SQLEXECARGS(query, paramsArray), running SQLEXEC with
+// a dynamic ARRAY of bind parameters.
+func SQLExecArgs(c *Ctx, query string, params Value) int64 {
+	return SQLExec(c, query, unpackSQLArgs("SQLEXECARGS", params)...)
+}
+
 // Tx implements TRANSACTION [ON name] … END TRANSACTION (Requirement 9.5).
 // The transaction is bound to c so every SQL, SQLOne, and SQLExec call made
 // while body runs — including inside helper functions — uses it.
