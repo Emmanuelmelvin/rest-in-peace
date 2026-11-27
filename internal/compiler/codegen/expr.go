@@ -51,6 +51,11 @@ var builtins = map[string]builtin{
 	"SQLARGS":     {fn: "rt.SQLArgs", min: 2, max: 2, t: tAny, ctx: true, args: []typ{tStr, tAny}},
 	"SQLONEARGS":  {fn: "rt.SQLOneArgs", min: 2, max: 2, t: tAny, ctx: true, args: []typ{tStr, tAny}},
 	"SQLEXECARGS": {fn: "rt.SQLExecArgs", min: 2, max: 2, t: tInt, ctx: true, args: []typ{tStr, tAny}},
+	"DBINSERT":    {fn: "rt.DBInsert", min: 2, max: 2, t: tAny, ctx: true, args: []typ{tStr, tAny}},
+	"DBFIND":      {fn: "rt.DBFind", min: 1, max: 2, t: tAny, ctx: true, args: []typ{tStr}},
+	"DBFINDONE":   {fn: "rt.DBFindOne", min: 1, max: 2, t: tAny, ctx: true, args: []typ{tStr}},
+	"DBUPDATE":    {fn: "rt.DBUpdate", min: 3, max: 3, t: tInt, ctx: true, args: []typ{tStr, tAny, tAny}},
+	"DBDELETE":    {fn: "rt.DBDelete", min: 2, max: 2, t: tInt, ctx: true, args: []typ{tStr, tAny}},
 	// Outbound HTTP (task 3.7, rt/fetch.go).
 	"FETCH": {fn: "rt.Fetch", min: 1, max: 2, t: tAny, ctx: true, args: []typ{tStr}},
 

@@ -20,6 +20,7 @@ var builtins = map[string]bool{
 	"ENV": true, "ENVREQUIRE": true,
 	"SQL": true, "SQLONE": true, "SQLEXEC": true,
 	"SQLARGS": true, "SQLONEARGS": true, "SQLEXECARGS": true,
+	"DBINSERT": true, "DBFIND": true, "DBFINDONE": true, "DBUPDATE": true, "DBDELETE": true,
 	"FETCH": true, "REQUEST": true,
 	"ERROR": true, "HTTPERROR": true, "NEW": true,
 	// Built-in middleware.
