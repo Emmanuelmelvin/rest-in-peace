@@ -9,18 +9,19 @@ RUN npm install
 COPY playground/web ./
 RUN npm run build
 
-FROM golang:1.24 AS host
+FROM golang:1.26 AS host
 WORKDIR /src
 COPY . .
 RUN CGO_ENABLED=0 go build -trimpath -o /out/playground ./cmd/playground
 
-FROM golang:1.24
+FROM golang:1.26
 # The host container holds no secrets (security.md). Programs run as separate
 # processes with a 128 MB cap; see internal/playground/sandbox.go.
 RUN useradd --create-home rip
+ENV GOPATH=/home/rip/go GOCACHE=/home/rip/.cache/go-build
 COPY --from=host /out/playground /usr/local/bin/playground
 COPY --from=web /web/dist /srv/web
 USER rip
-# TODO(task 5.3): warm the Go module and build caches by building one sample at image build time.
+RUN playground -warm -data /tmp/rip-playground && rm -rf /tmp/rip-playground
 EXPOSE 8090
 ENTRYPOINT ["playground", "-addr", ":8090", "-web", "/srv/web", "-data", "/tmp/rip-playground"]

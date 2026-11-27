@@ -1,0 +1,137 @@
+/* Styles for the built-in request tester. Uses the CSS variables from styles.css. */
+.tester {
+  margin-top: 12px;
+  border: 1px solid var(--dim);
+  padding: 12px;
+}
+
+.tester-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tester-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+}
+
+.tester-hint {
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
+.tester-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.tester-path {
+  flex: 1 1 240px;
+}
+
+.tester input,
+.tester textarea {
+  font: inherit;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--dim);
+  padding: 5px 8px;
+  text-shadow: var(--glow);
+}
+
+.tester input:focus,
+.tester textarea:focus {
+  outline: none;
+  border-color: var(--fg);
+}
+
+.tester-inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 800px) {
+  .tester-inputs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tester-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--dim);
+}
+
+.tester-field textarea {
+  width: 100%;
+  min-height: 76px;
+  resize: vertical;
+}
+
+.tester-curl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid var(--dim);
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.tester-curl pre {
+  margin: 0;
+  flex: 1 1 240px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 0.85rem;
+}
+
+.tester-response {
+  border-top: 1px solid var(--dim);
+  padding-top: 10px;
+}
+
+.tester-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.tester-response pre {
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--dim);
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tester-headers {
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+  color: var(--dim);
+}
+
+.tester-headers summary {
+  cursor: pointer;
+}
+
+.log-line-dim {
+  color: var(--dim);
+}
