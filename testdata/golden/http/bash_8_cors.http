@@ -1,0 +1,8 @@
+### GET includes configured CORS headers
+GET /ping
+=> 200
+access-control-allow-origin: https://rip.dev
+access-control-allow-methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+access-control-allow-headers: Content-Type, Authorization, X-Api-Key
+
+{"pong": true}

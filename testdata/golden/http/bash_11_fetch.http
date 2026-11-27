@@ -1,0 +1,5 @@
+### FETCH calls loopback route concurrently and parses JSON body + lowercase headers
+GET /proxy
+=> 200
+
+{"status": 200, "echoHeader": "ok", "body": {"seen": "world", "from": "fetch"}}

@@ -1,0 +1,6 @@
+### decimal JSON string + map insertion order
+GET /invoice
+=> 200
+content-type: application/json; charset=utf-8
+
+{"z_id": "inv-1", "a_subtotal": "200.00", "m_total": "215.00"}
