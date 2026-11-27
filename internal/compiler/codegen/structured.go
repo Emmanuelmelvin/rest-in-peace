@@ -163,6 +163,7 @@ func (g *gen) declare(v *varInfo, kind declKind, s ast.Stmt, sc *scope) {
 		if decl == "" {
 			v.decl = "ANY"
 		}
+		g.markSharedDecl(d, v)
 	case declConst:
 		c := s.(*ast.ConstDecl)
 		v.konst = true
@@ -213,8 +214,8 @@ func (g *gen) collectLocals(fn *fnInfo) {
 		if kind != declLet || fn.locals[name] != nil || conflict(name, p) {
 			return
 		}
-		if gv := g.globals[name]; gv != nil && gv.konst {
-			return // assigning a module-level CONST is reported where it happens
+		if gv := g.globals[name]; gv != nil && (gv.konst || g.isSharedVar(gv)) {
+			return // assigning a module-level CONST is reported where it happens; SHARED stays global
 		}
 		add(&varInfo{name: name, goName: g.mangle(name)})
 	})
@@ -242,7 +243,7 @@ func (g *gen) emitGlobals(o *out) {
 	if len(vars) > 0 {
 		o.w("var (")
 		for _, v := range vars {
-			o.w(v.goName, " ", v.t.goType())
+			o.w(v.goName, " ", g.globalGoType(v))
 		}
 		o.w(")")
 		o.w("")
@@ -573,6 +574,9 @@ func (g *gen) simpleStmt(o *out, s ast.Stmt, sc *scope) bool {
 
 // assign compiles target = value.
 func (g *gen) assign(o *out, p token.Pos, target, value ast.Expr, sc *scope) {
+	if g.sharedAssignHook(o, p, target, value, sc) {
+		return
+	}
 	switch t := target.(type) {
 	case *ast.Ident:
 		v := g.lookup(canon(t.Name), sc)
