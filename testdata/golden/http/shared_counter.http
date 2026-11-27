@@ -1,0 +1,34 @@
+SHARED DIM counter and map persist safely across HTTP requests (Requirement 14.4).
+
+### first hit
+POST /hit
+=> 200
+
+{"hits": 1}
+
+### second hit
+POST /hit
+=> 200
+
+{"hits": 2}
+
+### read hits
+GET /hit
+=> 200
+
+{"hits": 2}
+
+### store note in shared map
+POST /note/greeting
+Content-Type: application/json
+
+{"value": "READY."}
+=> 200
+
+{"ok": true}
+
+### read note from shared map
+GET /note/greeting
+=> 200
+
+{"value": "READY."}

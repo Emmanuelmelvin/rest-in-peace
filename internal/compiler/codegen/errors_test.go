@@ -205,7 +205,6 @@ func TestDiagnostics(t *testing.T) {
 		{"THROW a STRING", structured("d.bas", &ast.ThrowStmt{At: at(1), Value: str1}), diag.TypeMismatch, "THROW needs an error", 1},
 		{"classic TRANSACTION", classic("d.bas", ln(10, 1, &ast.TransactionStmt{At: at(1)})), diag.Syntax, "TRANSACTION only works in structured mode", 1},
 		{"TEST outside a .test.bas file", structured("d.bas", &ast.TestDecl{At: at(1), Name: "t"}), diag.Syntax, "TEST blocks go in test files named *.test.bas", 1},
-		{"SHARED DIM", structured("d.bas", &ast.DimStmt{At: at(2), Name: "X", Shared: true}), diag.NotImplemented, "task 4.3", 2},
 		{"method call on undefined var", structured("d.bas", do(1, &ast.CallExpr{Fn: mem(id("uuid"), "NewString")})), diag.Undefined, "no variable named UUID", 1},
 		{"classic ROUTE GOSUB", classic("d.bas", ln(10, 1, &ast.RouteStmt{At: at(1), Method: "GET", Path: "/", GosubLine: 100}), ln(20, 2, end(2))), diag.Undefined, "there is no line 100", 1},
 		{"GOTO in structured mode", structured("d.bas", pr(1, str("HELLO")), gotoS(2, 10)), diag.Syntax, "GOTO only works in classic mode; add line numbers, or use a loop or a FUNCTION", 2},
