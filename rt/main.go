@@ -73,6 +73,25 @@ var buildRoot = func() string {
 	return file + "/"
 }()
 
+// cleanBasFile normalizes a .bas frame path from runtime.CallersFrames so
+// runtime errors report the project-relative BASIC file name (such as
+// "tests/fail.test.bas") consistently on every OS, with or without -trimpath.
+func cleanBasFile(file, root string) string {
+	file = strings.ReplaceAll(file, `\`, "/")
+	if root != "" && root != "/" && strings.HasPrefix(file, root) {
+		return file[len(root):]
+	}
+	// Only strip leading directories from absolute paths that did not match
+	// buildRoot; relative paths (like "tests/fail.test.bas" on Linux without
+	// -trimpath) are already project-relative.
+	if strings.HasPrefix(file, "/") || (len(file) >= 2 && file[1] == ':') {
+		if j := strings.LastIndex(file, "/"); j >= 0 {
+			return file[j+1:]
+		}
+	}
+	return file
+}
+
 // basLocation finds the innermost BASIC statement on the panicking stack.
 // The //line directives make those frames report .bas files (design §4.5).
 // It must be called from a deferred function while the panic is unwinding.
@@ -84,12 +103,7 @@ func basLocation() (string, int) {
 		f, more := frames.Next()
 		file := strings.ReplaceAll(f.File, `\`, "/")
 		if strings.HasSuffix(file, ".bas") {
-			if buildRoot != "/" && strings.HasPrefix(file, buildRoot) {
-				file = file[len(buildRoot):]
-			} else if j := strings.LastIndex(file, "/"); j >= 0 {
-				file = file[j+1:]
-			}
-			return file, f.Line
+			return cleanBasFile(file, buildRoot), f.Line
 		}
 		if !more {
 			return "", 0
