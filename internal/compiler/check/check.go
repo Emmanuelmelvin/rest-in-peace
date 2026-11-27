@@ -86,7 +86,7 @@ func Check(p *ast.Program) diag.List {
 	all = append(all, checkModules(p)...)
 	all = append(all, checkGoImports(p)...)
 	all = append(all, checkSQLInjection(p)...)
-	// TODO(task 4.3): ?SHARED STATE WARNING for module variables assigned in handlers.
+	all = append(all, checkSharedState(p)...)
 	return all
 }
 

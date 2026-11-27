@@ -33,7 +33,9 @@ The tasks marked **[Kiro]** in `tasks.md` are built in Kiro, and everything else
 | 3.3 `rip migrate` & embedded migrations | `internal/cli/migrate.go`, `internal/cli/migrate_test.go`, `internal/cli/build.go`, `internal/build/migrations.go` |
 | 3.6 SQL injection warning | `internal/compiler/check/injection.go`, `internal/compiler/check/injection_test.go` |
 | 3.7 Outbound HTTP (`FETCH`) | `rt/fetch.go`, `rt/fetch_test.go`, `testdata/golden/*/fetch_*` |
+| 4.3 Shared-state warning and `SHARED` | `internal/compiler/check/shared.go`, `internal/compiler/check/shared_test.go`, `internal/compiler/codegen/shared.go`, `internal/compiler/codegen/shared_test.go`, `rt/shared.go`, `rt/shared_test.go`, `testdata/golden/*/shared_*` |
 | 5.4 CRT theme and samples | `playground/web/src/styles.css`, `playground/web/src/samples.ts` |
+| 6.2 Acceptance-criteria goldens (bug bash) | `testdata/golden/*/bash_*`, `docs/bugbash.md` |
 
 - **Claude Code sessions never edit these files**, and never implement these features anywhere else (for example, no DECIMAL arithmetic in `rt/ops.go`).
 - **Seams:** where shared code needs to call into a Kiro file, Claude Code adds a one-line call to a function the Kiro file defines (for example, `rt/ops.go` calls `decimalArith` from `rt/decimal.go`). It ships with a stub body, which Kiro then replaces. The seams for tasks 2.3b/2.7b, 2.4 and 2.5 are in place:
@@ -41,6 +43,7 @@ The tasks marked **[Kiro]** in `tasks.md` are built in Kiro, and everything else
   - **2.5:** `rt/decimal.go` defines `Decimal` (= `shopspring/decimal.Decimal`) and stubs for `DecimalOf`, `AsDecimal`, `Round`, `decimalArith`, `decimalCompare`, `decimalNeg`, `decimalString` and `decimalJSON`. Each stub's comment names its callers. Codegen compiles `DECIMAL(…)`, `ROUND(…)` and `AS DECIMAL` (a native `rt.Decimal`) to them, and `ops.go` and `value.go` call the hooks for arithmetic, comparisons, `PRINT` and JSON.
   - **2.4:** codegen compiles `LOG` to `rt.Log(c, level, msg, fields)` (fields is a `*Map` or nil) and `ENV`/`ENVREQUIRE` to `rt.Env`/`rt.EnvRequire` in their current signatures. `PRINT` writes to stdout, which the playground host captures as the program's log. The CLI already loads `.env` for `rip run`.
   - **3.6:** `internal/compiler/check/injection.go` defines `checkSQLInjection(p *ast.Program) diag.List`, called from `Check` in `internal/compiler/check/check.go`. Kiro replaces the stub body and adds tests in `internal/compiler/check/injection_test.go`.
+  - **4.3:** `internal/compiler/check/shared.go` defines `checkSharedState(p *ast.Program) diag.List`, called from `Check`; `internal/compiler/codegen/shared.go` defines `(g *gen) sharedDim(o *out, s *ast.DimStmt, sc *scope)`, called from `simpleStmt` in `structured.go` for `SHARED DIM`. If reads and writes of a `SHARED` variable need a hook in `structured.go` or `expr.go`, Kiro may add **one-line calls** there into a function defined in `codegen/shared.go`, and nothing else in those files.
 - **Kiro stays inside its own files too.** If a Kiro task needs a change elsewhere, write it down in `docs/kiro.md` and leave it to be done on the Claude Code side.
 
 ## Rules

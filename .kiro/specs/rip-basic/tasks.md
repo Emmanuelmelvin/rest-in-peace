@@ -87,7 +87,7 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
   - _Requirements: 13_
 - [ ] 4.2 `P0` TEST/EXPECT/REQUEST and `rip test` (SQLite `:memory:`, `.env.test`, non-zero exit on failure)
   - _Requirements: 12.1–12.4_
-- [ ] 4.3 `P1` `rip check`; shared-state warning; `SHARED`
+- [ ] 4.3 `P1` `rip check`; shared-state warning; `SHARED` · **[Kiro: shared-state warning and `SHARED`]**
   - _Requirements: 13, 14.4_
 
 ## Phase 5 — Showcase & playground (Wed 2 – Thu 3 Dec)
@@ -110,7 +110,7 @@ Stubs in the code are marked `TODO(task X.Y)`, so `grep -rn "TODO(task 1.2)"` fi
 ## Phase 6 — Polish & submit (Thu 3 – Fri 4 Dec)
 
 - [ ] 6.1 `P0` README: pitch, quick start, language reference, invoicing walkthrough
-- [ ] 6.2 `P0` Bug bash against the acceptance criteria; golden suite ≥ 80 programs
+- [ ] 6.2 `P0` Bug bash against the acceptance criteria; golden suite ≥ 80 programs · **[Kiro: acceptance-criteria goldens `bash_*`]**
 - [ ] 6.3 `P0` Kiro usage write-up (`docs/kiro.md`)
 - [ ] 6.4 `P0` Demo video under 3 min on YouTube
 - [ ] 6.5 `P0` Submit on Devpost **before Fri 4 Dec, 11:00 PM WAT**
