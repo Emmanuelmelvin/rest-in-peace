@@ -245,7 +245,7 @@ func (p *parser) closerHere() (closer, bool) {
 		return closer{token.TRY, p.tok.Kind.String()}, true
 	case token.END:
 		switch k := p.peek().Kind; k {
-		case token.IF, token.FUNCTION, token.SUB, token.SELECT, token.TRY, token.GROUP, token.TRANSACTION, token.TEST:
+		case token.IF, token.FUNCTION, token.SUB, token.SELECT, token.TRY, token.GROUP, token.TRANSACTION, token.TEST, token.PARALLEL:
 			return closer{k, "END " + k.String()}, true
 		}
 	}
@@ -457,6 +457,12 @@ func (p *parser) stmt() ast.Stmt {
 		return p.tryStmt()
 	case token.TRANSACTION:
 		return p.transaction()
+	case token.SPAWN:
+		return p.spawnStmt()
+	case token.EVERY:
+		return p.everyStmt()
+	case token.PARALLEL:
+		return p.parallelStmt()
 	case token.TEST:
 		p.topLevel(t)
 		return p.testDecl()
@@ -1108,6 +1114,40 @@ func (p *parser) transaction() ast.Stmt {
 	s.Body, closed = p.block(token.TRANSACTION, s.At)
 	if !closed {
 		p.unclosed(s.At, "TRANSACTION", "END TRANSACTION")
+		return s
+	}
+	p.closeWith2()
+	return s
+}
+
+func (p *parser) spawnStmt() ast.Stmt {
+	t := p.tok
+	p.next()
+	e := p.operand(precLowest, t)
+	call, ok := e.(*ast.CallExpr)
+	if !ok {
+		p.fail(e.Pos(), "expected a function call after SPAWN, e.g. SPAWN SendEmail(addr)")
+	}
+	return &ast.SpawnStmt{At: t.Pos, Call: call}
+}
+
+func (p *parser) everyStmt() ast.Stmt {
+	t := p.tok
+	p.next()
+	interval := p.operand(precLowest, t)
+	p.expect(token.CALL, "expected CALL and a function name after EVERY interval, e.g. EVERY 5000 CALL Cleanup")
+	handlerAt := p.tok.Pos
+	handler := p.name("expected a function name after CALL")
+	return &ast.EveryStmt{At: t.Pos, Interval: interval, Handler: handler, HandlerAt: handlerAt}
+}
+
+func (p *parser) parallelStmt() ast.Stmt {
+	s := &ast.ParallelStmt{At: p.tok.Pos}
+	p.header(p.next)
+	var closed bool
+	s.Body, closed = p.block(token.PARALLEL, s.At)
+	if !closed {
+		p.unclosed(s.At, "PARALLEL", "END PARALLEL")
 		return s
 	}
 	p.closeWith2()

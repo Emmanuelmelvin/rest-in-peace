@@ -125,6 +125,8 @@ func (g *gen) collectDecls(stmts []ast.Stmt, sc *scope, add func(kind declKind, 
 			g.collectTry(s, sc, add) // try.go
 		case *ast.TransactionStmt:
 			g.collectDecls(s.Body, sc, add)
+		case *ast.ParallelStmt:
+			g.collectDecls(s.Body, sc, add)
 		}
 	}
 }
@@ -621,6 +623,9 @@ func (g *gen) laterStmt(o *out, s ast.Stmt, sc *scope) bool {
 		return true
 	case *ast.TestDecl, *ast.ExpectStmt:
 		g.testStmt(o, s, sc) // testing.go (task 4.2)
+		return true
+	case *ast.SpawnStmt, *ast.EveryStmt, *ast.ParallelStmt:
+		g.concurrencyStmt(o, s, sc)
 		return true
 	}
 	return false
